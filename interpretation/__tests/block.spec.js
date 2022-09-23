@@ -47,7 +47,7 @@ assert.strictEqual(eva.eval(
         'data']),
     100)
 
-    testUtil.test(`
+    testUtil.test(eva, `
     (begin
         (var x 10)
         (var y 20)
