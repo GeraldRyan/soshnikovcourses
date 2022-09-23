@@ -1,4 +1,5 @@
 const assert = require('assert')
+const testUtil = require('./test-utils')
 
 module.exports = eva => {
 // Blocks:
@@ -45,5 +46,12 @@ assert.strictEqual(eva.eval(
         ],
         'data']),
     100)
+
+    testUtil.test(`
+    (begin
+        (var x 10)
+        (var y 20)
+        (+ (* x 10) y))
+    `, 120)
 
 }
