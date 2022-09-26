@@ -7,19 +7,16 @@ const tests = [
     require('./self_evaluating_expression.spec'),
     require('./variables.spec'),
     require('./if.spec'),
-    require('./while.spec')
+    require('./while.spec'),
+    require('./built_in_function.spec')
 ]
 
-const eva = new Eva(new Environment({
-    null: null,
-    true: true,
-    false: false,
-
-    VERSION: '0.1'
-}));
+const eva = new Eva();
 
 tests.forEach(t =>{
     t(eva)
 })
+
+eva.eval(['print', '"Hello"', '"world"'])
 
 console.log("All assertions passed")
