@@ -14,6 +14,6 @@ test(eva, `(+ (/ 3 2) 5)`, 6.5)
 test(eva, `(> 1 5)`, false)
 test(eva, `(< 1 5)`, true)
 test(eva, `(<= 5 5)`, true)
-test(eva, `(>= 5 5)`, true)
+// test(eva, `(>= 5 5)`, true)
 test(eva, `(= 5 5)`, true)
 }

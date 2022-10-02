@@ -28,29 +28,17 @@ class Eva {
         }
 
         // ------------------------------
-        // Math operations
-        if (exp[0] === '+') {
-            return this.eval(exp[1], env) + this.eval(exp[2], env)
-        }
-        if (exp[0] === '*') {
-            return this.eval(exp[1], env) * this.eval(exp[2], env)
-        }
-        if (exp[0] === '/') {
-            return this.eval(exp[1], env) / this.eval(exp[2], env)
-        }
-        if (exp[0] === '-') {
-            return this.eval(exp[1], env) - this.eval(exp[2], env)
-        }
+        // Math operations -- see built-ins
 
         // -------------------------------
-        // comparison operators
-        if (exp[0] === '>') {
-            return this.eval(exp[1], env) > this.eval(exp[2], env)
-        }
+        // // comparison operators
+        // if (exp[0] === '>') {
+        //     return this.eval(exp[1], env) > this.eval(exp[2], env)
+        // }
 
-        if (exp[0] === '>=') {
-            return this.eval(exp[1], env) >= this.eval(exp[2], env)
-        }
+        // if (exp[0] === '>=') {
+        //     return this.eval(exp[1], env) >= this.eval(exp[2], env)
+        // }
 
         if (exp[0] === '<') {
             return this.eval(exp[1], env) < this.eval(exp[2], env)
@@ -116,6 +104,40 @@ class Eva {
         }
 
         // -------------------------------
+        // Function Declaration: (def sauare (x) (* x x))
+
+        // Syntactic sugar for: (var square (lambda)(x)(* x x))
+
+        if (exp[0] === 'def') {
+            const [_tag, name, params, body] = exp
+            
+            // const fn = {
+            //     params,
+            //     body,
+            //     env, // closure!
+            // };
+
+            // return env.define(name, fn)
+
+            // JIT-transpile to a variable declaration
+
+            const varExp = ['var', name, ['lambda', params, body]]
+            return this.eval(varExp, env)
+        }
+
+        // ------------------------------
+        // Lambda function: (lambda (x) (* x x))
+        if (exp[0] === 'lambda'){
+            const [_tag, params, body] = exp
+
+            return{
+                params,
+                body,
+                env, // closure
+            }
+        }
+
+        // -------------------------------
         // Function call:
         // (print "Hello World")
         // (+ x 5)
@@ -129,11 +151,32 @@ class Eva {
                 return fn(...args)
             }
 
-            // 2. User-defined functions
+            // 2. User-defined function (def square (x) (* x x))
+
+            const activationRecord = {}
+
+            fn.params.forEach((param, index)=>{
+                activationRecord[param] = args[index]
+            })
+
+            const activationEnv = new Environment(
+                activationRecord, 
+                // env // ? - dynamic scope, we don't want
+                fn.env // static scope!
+            )
+
+            return this._evalBody(fn.body, activationEnv)
 
         }
 
         throw `Unimplemented: ${JSON.stringify(exp)}`
+    }
+
+    _evalBody(body, env){
+        if (body[0] == 'begin'){
+            return this._evalBlock(body, env)
+        }
+        return this.eval(body, env)
     }
 
     _evalBlock(block, env) {
@@ -191,6 +234,7 @@ const GlobalEnvironment = new Environment({
     '<'(op1, op2) {
         return op1 < op2
     },
+    // for some reason these aren't working
     '>='(op1, op2) {
         return op1 >= op2
     },

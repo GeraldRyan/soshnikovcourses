@@ -3,10 +3,11 @@ const {test} = require('./test-utils')
 
 module.exports = eva => {
 // Math operations:
-test(eva, `(+ 1 5)`, 6);
-test(eva, `(+ (+ 3 2) 5)`, 10)
-test(eva, `(+ (* 3 2) 5)`, 11)
-test(eva, `(+ (- 3 2) 5)`, 6)
-test(eva, `(+ (/ 3 2) 5)`, 6.5)
+// tested in built-in
+// test(eva, `(+ 1 5)`, 6);
+// test(eva, `(+ (+ 3 2) 5)`, 10)
+// test(eva, `(+ (* 3 2) 5)`, 11)
+// test(eva, `(+ (- 3 2) 5)`, 6)
+// test(eva, `(+ (/ 3 2) 5)`, 6.5)
 
 }

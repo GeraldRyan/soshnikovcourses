@@ -8,7 +8,9 @@ const tests = [
     require('./variables.spec'),
     require('./if.spec'),
     require('./while.spec'),
-    require('./built_in_function.spec')
+    require('./built_in_function.spec'),
+    require('./user_defined_function.spec'),
+    require('./lambda_func.spec')
 ]
 
 const eva = new Eva();
