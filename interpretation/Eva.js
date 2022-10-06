@@ -114,6 +114,61 @@ class Eva {
             return this.eval(varExp, env)
         }
 
+        // --------------------------------
+        // Switch-expression: (switch (cond1, block1))
+        //
+        // Syntactic sugar for nested if-expressions
+
+        if (exp[0] === 'switch'){
+            const ifExp = this._transformer.transformSwitchToIf(exp);
+
+            return this.eval(ifExp, env)
+        }
+
+        // ---------------------------------
+        // For-loop (for init condition modifier body)
+        //
+        // Syntactic sugar for (begin init (while condition (begin body modifier)))
+
+        // IMPLEMENT ME
+        if (exp[0] === 'for'){
+            const whileExp = this._transformer.transformForToWhile(exp)
+            return this.eval(whileExp, env)
+        }
+
+        // -----------------------------------
+        // increment: (++ foo)
+        // Syntactic sugar for: (set foo (+ foo 1))
+        if (exp[0] === '++'){
+            const setExp = this._transformer.transformIncToSet(exp)
+            return this.eval(setExp, env)
+        }
+
+        // -----------------------------------
+        // increment: (+= foo)
+        // Syntactic sugar for: (set foo (+ foo inc))
+        if (exp[0] === '+='){
+            const setExp = this._transformer.transformIncValToSet(exp)
+            return this.eval(setExp, env)
+        }
+
+        // -----------------------------------
+        // decrement: (-- foo)
+        // Syntactic sugar for: (set foo (- foo 1))
+        if (exp[0] === '--'){
+            const setExp = this._transformer.transformDecToSet(exp)
+            return this.eval(setExp, env)
+        }
+        // -----------------------------------
+        // decrement: (-= foo)
+        // Syntactic sugar for: (set foo (- foo dec))
+        if (exp[0] === '-='){
+            const setExp = this._transformer.transformDecValToSet(exp)
+            return this.eval(setExp, env)
+        }
+        // IMPLEMENT ME
+
+
         // ------------------------------
         // Lambda function: (lambda (x) (* x x))
         if (exp[0] === 'lambda'){
