@@ -11,7 +11,8 @@ const tests = [
     require('./built_in_function.spec'),
     require('./user_defined_function.spec'),
     require('./lambda_func.spec'),
-    // require('./switch.spec')
+    require('./switch.spec'),
+    require('./classImpl.spec') // implement me!
 ]
 
 const eva = new Eva();
