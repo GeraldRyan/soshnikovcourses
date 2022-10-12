@@ -2,6 +2,16 @@ const Environment = require('./Environment')
 const Transformer = require('./transformer/Transformer');
 const classImplSpec = require('./__tests/classImpl.spec');
 
+// Todo (Gerald) - 
+// 1. Implement in Typescript
+// 2. Remove comments 
+// 3. Finish the syntactic sugar aspects
+// 4. Standardize test names
+// 5. Remove or improve comments. 
+// 6. .....
+
+// Notes: You either get it (regarding many concepts and sub concepts) or you don't. If you don't get it, don't rush forward. Only move forward slowly if you think that will help you get it, but know that is dangerous too. Go forward 2 steps and then one step back. Do go forward, progressively, but review review review. Success lies in reviewing. 
+
 /**
  * Eva Interpreter
  */
@@ -28,15 +38,18 @@ class Eva {
         // If functions are not environments, then function calls certainly are. 
         // This is subtitled semantics of programming languages or runtime semantics. 
         // I am studying to show myself approved. 
+        // one can't get far without having fully learned the ground one has passed over. One needs mnemonics.
+        // This is the core function of the interpreter. Expressions are evaluated, and statements are executed. How do you build an executor? And functions are applied?
 
 
         // -----------------------------
         // Self Evaluating Expressions
+        // These two are necessary. They are essentially identity functions but since the eval system is very recursive, we call eval on all arguments and sub expressions, and that sub expression may be a number or string and if we didn't add this identity, it would fail for not knowing how to process it. I should look and see as I look at language implementations like CPython and V8 JS, I can look out for these types of patterns that I see here in this course. There are only so many ways to invent a wheel. It is to see the low level syntax, the high level patterns and the medium patterns and everything in between. That is mastery, that is understanding, that is success. That is being a well versed engineer.  
         if (this._isNumber(exp)) {
             return exp;
         }
         if (this._isString(exp)) {
-            return exp.slice(1, -1)
+            return exp.slice(1, -1) // parentheses?
         }
 
         
