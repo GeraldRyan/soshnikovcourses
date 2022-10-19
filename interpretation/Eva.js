@@ -1,6 +1,7 @@
 const Environment = require('./Environment')
 const Transformer = require('./transformer/Transformer');
-const classImplSpec = require('./__tests/classImpl.spec');
+const evaParser = require('./parser/evaParser')
+const fs = require('fs')
 
 // Todo (Gerald) - 
 // 1. Implement in Typescript
@@ -9,8 +10,6 @@ const classImplSpec = require('./__tests/classImpl.spec');
 // 4. Standardize test names
 // 5. Remove or improve comments. 
 // 6. .....
-
-// Notes: You either get it (regarding many concepts and sub concepts) or you don't. If you don't get it, don't rush forward. Only move forward slowly if you think that will help you get it, but know that is dangerous too. Go forward 2 steps and then one step back. Do go forward, progressively, but review review review. Success lies in reviewing. 
 
 /**
  * Eva Interpreter
@@ -26,25 +25,21 @@ class Eva {
         this.global = global
         this._transformer = new Transformer()
     }
+
+    evalGlobal(exp) {
+        return this._evalBody(exp, this.global)
+    }
+
     /**
      * Evaluates an expression in the given environment
      */
     eval(exp, env = this.global) { // this is very clever, allowing one to pass an env. 
-        // all eval calls must or should be passed an environment - unless you know it can be the global default. 
-        // this env param enables many features. This was here all along. The simple things hide away the power. 
-        // it takes a wise insightful man to see the power inside simple patterns, especially when run in combination. 
-        // This second param is HUGE. It enables blocks, block scope and all that block scopes enable, it enables functions and all that functions enable (or function calls).
-        // It enables classes. Classes are an environment, essentially, as are class instances. 
-        // If functions are not environments, then function calls certainly are. 
-        // This is subtitled semantics of programming languages or runtime semantics. 
-        // I am studying to show myself approved. 
-        // one can't get far without having fully learned the ground one has passed over. One needs mnemonics.
-        // This is the core function of the interpreter. Expressions are evaluated, and statements are executed. How do you build an executor? And functions are applied?
-
+        // all eval calls must or should be passed an environment in which to lookup properties and entries.
+        // The environment param enables blocks and block scope, which enables so many other things like function scope, closures and classes ultimately. 
 
         // -----------------------------
         // Self Evaluating Expressions
-        // These two are necessary. They are essentially identity functions but since the eval system is very recursive, we call eval on all arguments and sub expressions, and that sub expression may be a number or string and if we didn't add this identity, it would fail for not knowing how to process it. I should look and see as I look at language implementations like CPython and V8 JS, I can look out for these types of patterns that I see here in this course. There are only so many ways to invent a wheel. It is to see the low level syntax, the high level patterns and the medium patterns and everything in between. That is mastery, that is understanding, that is success. That is being a well versed engineer.  
+        // These are necessary and allow recursion with a base case exit point. Look for this type of code in real world language implementations
         if (this._isNumber(exp)) {
             return exp;
         }
@@ -52,7 +47,7 @@ class Eva {
             return exp.slice(1, -1) // parentheses?
         }
 
-        
+
         // I thought we needed this. We don't. 
         // if (exp === null){ 
         //     return false
@@ -104,10 +99,11 @@ class Eva {
             const [_, ref, value] = exp // reference can be variable name or instance prop
 
             // assignment to property
-            if (ref[0] === 'prop'){
+            if (ref[0] === 'prop') {
                 const [_tag, instance, propName] = ref
-                const instanceEnv = this.eval(instance, env)
-                return instanceEnv.define(propName, this.eval(value, env))
+                const instanceEnv = this.eval(instance, env) // evaluating a class returns an env
+                // if this was TS we would define instanceEnv as Environment type
+                return instanceEnv.define(propName, this.eval(value, env)) // define the prop in the instance Env
             }
 
             // simple assignment
@@ -146,7 +142,6 @@ class Eva {
 
         // -------------------------------
         // Function Declaration: (def square (x) (* x x))
-
         // Syntactic sugar for: (var square (lambda)(x)(* x x))
 
         if (exp[0] === 'def') {
@@ -156,10 +151,9 @@ class Eva {
 
         // --------------------------------
         // Switch-expression: (switch (cond1, block1))
-        //
         // Syntactic sugar for nested if-expressions
 
-        if (exp[0] === 'switch'){
+        if (exp[0] === 'switch') {
             const ifExp = this._transformer.transformSwitchToIf(exp);
 
             return this.eval(ifExp, env)
@@ -167,11 +161,10 @@ class Eva {
 
         // ---------------------------------
         // For-loop (for init condition modifier body)
-        //
         // Syntactic sugar for (begin init (while condition (begin body modifier)))
 
         // IMPLEMENT ME
-        if (exp[0] === 'for'){
+        if (exp[0] === 'for') {
             const whileExp = this._transformer.transformForToWhile(exp)
             return this.eval(whileExp, env)
         }
@@ -179,7 +172,7 @@ class Eva {
         // -----------------------------------
         // increment: (++ foo)
         // Syntactic sugar for: (set foo (+ foo 1))
-        if (exp[0] === '++'){
+        if (exp[0] === '++') {
             const setExp = this._transformer.transformIncToSet(exp)
             return this.eval(setExp, env)
         }
@@ -187,7 +180,7 @@ class Eva {
         // -----------------------------------
         // increment: (+= foo)
         // Syntactic sugar for: (set foo (+ foo inc))
-        if (exp[0] === '+='){
+        if (exp[0] === '+=') {
             const setExp = this._transformer.transformIncValToSet(exp)
             return this.eval(setExp, env)
         }
@@ -195,14 +188,14 @@ class Eva {
         // -----------------------------------
         // decrement: (-- foo)
         // Syntactic sugar for: (set foo (- foo 1))
-        if (exp[0] === '--'){
+        if (exp[0] === '--') {
             const setExp = this._transformer.transformDecToSet(exp)
             return this.eval(setExp, env)
         }
         // -----------------------------------
         // decrement: (-= foo)
         // Syntactic sugar for: (set foo (- foo dec))
-        if (exp[0] === '-='){
+        if (exp[0] === '-=') {
             const setExp = this._transformer.transformDecValToSet(exp)
             return this.eval(setExp, env)
         }
@@ -211,14 +204,14 @@ class Eva {
 
         // ------------------------------
         // Lambda function: (lambda (x) (* x x))
-        if (exp[0] === 'lambda'){
+        if (exp[0] === 'lambda') {
             const [_tag, params, body] = exp
 
             // A function is just a simple object! It translates the array elements into object 
             // elements of the variable names 
             // Invocation is where the magic happens. Invocation processes a function object. I wonder how V8 
             // implements funtions as objects, if it's like this. 
-            return { 
+            return {
                 params,
                 body,
                 env, // closure
@@ -227,45 +220,78 @@ class Eva {
 
         // -------------------------------
         // Class declaration: (class <name> <parent> <Body>)
-
-        if (exp[0] === 'class'){
+        if (exp[0] === 'class') {
             const [_tag, name, parent, body] = exp
-            const parentEnv = this.eval(parent, env) || env
+            const parentEnv = this.eval(parent, env) || env // env is the base global?
             const classEnv = new Environment({}, parentEnv)
-            this._evalBody(body, classEnv) // install properties and methods here
+            this._evalBody(body, classEnv) // install properties and methods of body in this env here
+            // this.global.define(name, classEnv)
 
-            return env.define(name, classEnv)
+
+            return env.define(name, classEnv) // side effect (install) and return env, which is what a class is
+        }
+
+        // --------------------------------
+        // Super expressions: (super <ClassName>)
+        if (exp[0] === 'super') {
+            const [_tag, className] = exp
+            return this.eval(className, env).parent
         }
 
         // --------------------------------
         // Class instantiation: (new <Class> <Arguments>...)
 
-        if (exp[0] === 'new'){
-            // an instance of a class is an environment!
-            // The `Parent` component of the instance env is set to its class
+        if (exp[0] === 'new') {
+            // an instance of a class is an environment
 
-            const classEnv = this.eval(exp[1], env)
+            const classEnv = this.eval(exp[1], env) // exp[1] == Point == typeof classEnv  
 
             const instanceEnv = new Environment({}, classEnv)
 
             const args = exp.slice(2).map(arg => this.eval(arg, env))
 
-            this._callUserDefinedFunction(classEnv.lookup('constructor'),
-            [instanceEnv, ...args] // instanceEnv == 'this' or 'self'; always passed
+            this._callUserDefinedFunction(classEnv.lookup('constructor'), // constructors live in classEnv
+                [instanceEnv, ...args] // instanceEnv == 'this' or 'self'; always passed
             )
-            return instanceEnv // return this (now you see things from the bottom of the lake)
+            return instanceEnv // returns 'this' (now you see things from the bottom of the lake)
         }
         // -----------------------
         // class Property access: (prop <instance> <name>)
-        // note - why not <instance>.<propname>? Wouldn't that be more standard?
-        //  would that be hard for me to impl after this course is finished?  
-        if (exp[0] === 'prop'){
+        // Would <instance>.<propname> be hard to implement
+        if (exp[0] === 'prop') {
             const [_tag, instance, name] = exp // e.g. ['prop', 'p', 'calc'] or ['prop', 'this', 'y']
-            const instanceEnv = this.eval(instance, env) // eval returns an env (1st class citizen). Instance is represented here of course as a varaible - what else, that is looked up in Eva.eval (simple lookup, nothing magical; the magic happens via environments and environmental nesting)
+            const instanceEnv = this.eval(instance, env)
+            return instanceEnv.lookup(name) // perform simple lookup in env
+        }
+        
+        // ---------------------------------
+        // Module declaration: (module <body>)
+        
 
-            // console.log(env) // parent: Environment { record: {constructor: [Object]. calc: [Object]}}
-            // console.log(instanceEnv) // stores env just like you'd expect
-            return instanceEnv.lookup(name)
+        if (exp[0] === 'module') {
+            const [_tag, name, body] = exp
+
+            const moduleEnv = new Environment({}, env)
+
+            this._evalBody(body, moduleEnv)
+            return env.define(name, moduleEnv)
+        }
+        
+        // ---------------------------------
+        // Module import: (import <name>)
+
+        if (exp[0] === 'import') {
+            const [_tag, name] = exp
+
+            const moduleSrc = fs.readFileSync(
+                `${__dirname}/modules/${name}.eva`, 'utf-8'
+            )
+
+            const body = evaParser.parse(`(begin ${moduleSrc})`)
+
+            const moduleExp = ['module', name, body]
+
+            return this.eval(moduleExp, this.global)
         }
 
 
@@ -293,25 +319,24 @@ class Eva {
         throw `Unimplemented: ${JSON.stringify(exp)}`
     }
 
-    _callUserDefinedFunction(fn, args){
-        const activationRecord = {} // what is this?
+    _callUserDefinedFunction(fn, args) {
+        const activationRecord = {}
 
-        fn.params.forEach((param, index)=>{
+        fn.params.forEach((param, index) => {
             activationRecord[param] = args[index] // install the args into the param slots
         })
 
         const activationEnv = new Environment(
-            activationRecord, 
+            activationRecord,
             // env // dynamic scope; we don't want
-            fn.env // static scope, we want! ....I think this is a closure. The env sticks to the function. I could be wrong. Aren't we only identifying a function by its name and not its instance? Yes, but we can store it as a variable elsewhere (under the first class function principle). That's a user's prerogative. 
+            fn.env // static scope, we want! 
         )
 
-        return this._evalBody(fn.body, activationEnv) // this body is just a block. Everything is block based. 
-        // this again refers to closures- the activation environment. 
+        return this._evalBody(fn.body, activationEnv)
     }
 
-    _evalBody(body, env){
-        if (body[0] == 'begin'){
+    _evalBody(body, env) {
+        if (body[0] == 'begin') {
             return this._evalBlock(body, env)
         }
         return this.eval(body, env)
@@ -319,18 +344,13 @@ class Eva {
 
     _evalBlock(block, env) {
         let result;
-        const [_tag, ...expressions] = block; // spread syntax is very powerful here
+        const [_tag, ...expressions] = block;
 
         expressions.forEach(exp => {
-            result = this.eval(exp, env); // this is actually very simple..
-        }) 
+            result = this.eval(exp, env);
+        })
         return result
-        // Programming, complex programming...
-        // is built on very simple principles, meticulously applied
-        // the ability to be meticulous, and see patterns and what tool you need where, with understanding..
-        // that makes the programmer
-        // building blocks pun intended. Now how is C implemented in assembly, and how is assembly implemented..
-        // via instruction set? That's it, that's the grand chain beneath which is transistor or circuit level. 
+        // Complex programming is built on very simple principles, meticulously applied
     }
 
     _isNumber(exp) {
@@ -388,11 +408,9 @@ const GlobalEnvironment = new Environment({
         return op1 === op2
     },
 
-    print(...args){
+    print(...args) {
         console.log(...args)
     }
 })
 
 module.exports = Eva;
-
-// I still don't understand function calls (extracting and storing arguments, the switch statement..)

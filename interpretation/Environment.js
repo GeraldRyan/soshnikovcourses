@@ -7,7 +7,7 @@ class Environment {
      */
     constructor(record = {}, parent = null) {
         this.record = record
-        this.parent = parent
+        this.parent = parent // this would be good to Typescript
     }
     /**
      * 
