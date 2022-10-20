@@ -1,0 +1,47 @@
+(import Math)
+
+(var abs (prop Math abs))
+
+(var x (- 10))
+
+(print (abs x))
+
+(class Point null
+    (begin
+    
+        (def constructor (this x y)
+            (begin
+                (set (prop this x) x)    
+                (set (prop this y) y)    
+            )
+        )
+
+        (def calc (this)
+        
+                (+ (prop this x) (prop this y) )
+        )
+    )
+)
+
+(var p (new Point 10 20 ))
+(print "Value:" ((prop p calc) p))
+
+// todo
+
+-- other data structures
+
+(var base (object (value 100)))
+
+(object 
+    (x 10)
+    (y 20)
+    (__proto__ base)
+)
+
+(var values (list 4" "hello" foo)) // syntactic sugar for calling array class
+(prop values 0) // 42
+(prop values 1) // "hello"
+
+- Async functions
+
+(def async getData (uri))

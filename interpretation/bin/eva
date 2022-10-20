@@ -24,7 +24,7 @@ function main(argv){
 
     // Eva File:
     if (mode === '-f'){
-        const src = fs.readFileSync(mode, 'utf-8')
+        const src = fs.readFileSync(exp, 'utf-8')
         return evalGlobal(src, eva)
     }
 }
