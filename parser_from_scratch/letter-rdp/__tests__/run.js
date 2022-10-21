@@ -3,9 +3,8 @@
  */
 
 const {Parser} = require('../src/Parser')
-
 const parser = new Parser()
-
+console.log(parser)
 const program = '42'
 
 const ast = parser.parse(program)
