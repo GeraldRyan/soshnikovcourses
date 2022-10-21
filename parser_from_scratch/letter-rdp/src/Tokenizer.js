@@ -3,10 +3,6 @@
  * Lazily pulls a token from a stream. 
  */
 class Tokenizer {
-
-    // constructor(){
-    //     this._string = ''
-    // }
     
     /**
      * 
@@ -15,6 +11,13 @@ class Tokenizer {
     init(string){
         this._string = string
         this._cursor = 0
+    }
+
+    /**
+     * Wither tokenizer hath reached EOF
+     */
+    isEOF(){
+        return this._cursor === this._string.length
     }
 
     /**
@@ -44,7 +47,19 @@ class Tokenizer {
                 type: 'NUMBER',
                 value: number 
             }
+        }
 
+        // String:
+        if (string[0] ==='"'){
+            let s = '';
+            do {
+                s += string[this._cursor++]
+            } while (string[this.cursor] !== '"' && !this.isEOF())
+            // s += string[this._cursor++]; // consume double quote
+            return {
+                type: 'STRING',
+                value: s,
+            }
         }
         return null
     }
