@@ -3,6 +3,9 @@
  * 
  */
 const Spec = [
+    [/^\s+/, null], // ignore whitespace
+    [/^\/\/.*/, null], // ignore comments
+    [/^\/\*[\s\S]*?\*\//, null], // multi line comments
     [/^\d+/, 'NUMBER'],
     [/^"[^"]*"/, 'STRING'],
     [/^'[^']*'/, 'STRING']
@@ -53,13 +56,18 @@ class Tokenizer {
             if (tokenValue == null){
                 continue
             }
+
+            if (tokenType == null){
+                return this.getNextToken()
+            }
+
             return {
                 type: tokenType,
                 value: tokenValue
             }
         }
 
-        return null
+        throw new SyntaxError(`Unexpected token: "${string[0]}"`)
     }
 
     /**
