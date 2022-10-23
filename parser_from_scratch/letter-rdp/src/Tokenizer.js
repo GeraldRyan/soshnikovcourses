@@ -1,14 +1,25 @@
 /**
+ * Tokenizer spec.
+ * 
+ */
+const Spec = [
+    [/^\d+/, 'NUMBER'],
+    [/^"[^"]*"/, 'STRING'],
+    [/^'[^']*'/, 'STRING']
+]
+
+
+/**
  * Tokenizer class.
  * Lazily pulls a token from a stream. 
  */
 class Tokenizer {
-    
+
     /**
      * 
      * Initializes the string.
      */
-    init(string){
+    init(string) {
         this._string = string
         this._cursor = 0
     }
@@ -16,60 +27,54 @@ class Tokenizer {
     /**
      * Wither tokenizer hath reached EOF
      */
-    isEOF(){
+    isEOF() {
         return this._cursor === this._string.length
     }
 
     /**
      * Whether we still have more tokens
      */
-    hasMoreTokens(){
+    hasMoreTokens() {
         return this._cursor < this._string.length
     }
 
     /**
      * Obtains next token.
      */
-    getNextToken(){
-        if (!this.hasMoreTokens()){
+    getNextToken() {
+        if (!this.hasMoreTokens()) {
             return null
         }
 
         const string = this._string.slice(this._cursor)
 
-        // Numbers: \d+
-        let matched =  /^\d+/.exec(string)
-        if (matched !== null){
-            this._cursor += matched[0].length
+        for (const [regexp, tokenType] of Spec) {
+            const tokenValue = this._match(regexp, string)
+            if (tokenValue == null){
+                continue
+            }
             return {
-                type: 'NUMBER',
-                value: matched[0]
+                type: tokenType,
+                value: tokenValue
             }
         }
 
-        // String (double quotes):
-        matched = /^"[^"]*"/.exec(string)
-        if (matched !== null){
-            this._cursor += matched[0].length
-            return {
-                type: 'STRING',
-                value: matched[0],
-            }
-        }
-
-        // String (single quotes):
-        matched = /^'[^']*'/.exec(string)
-        if (matched !== null){
-            this._cursor += matched[0].length
-            return {
-                type: 'STRING',
-                value: matched[0],
-            }
-        }
         return null
     }
-}
 
+    /**
+     * 
+     * Matches token for a regular expression 
+     */
+    _match(regexp, string) {
+        const matched = regexp.exec(string)
+        if (matched == null) {
+            return null
+        }
+        this._cursor += matched[0].length
+        return matched[0]
+    }
+}
 
 
 module.exports = {
