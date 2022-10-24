@@ -10,7 +10,7 @@ class Parser {
      */
     constructor(){
         this._string = ''
-        this._tokenizer = new Tokenizer()
+        this._tokenizer = new Tokenizer() // The tokenizer is embedded into the parser object. The parser is composed of a tokenizer, as well as the string to parse. 
     }
 
     /**
@@ -32,7 +32,7 @@ class Parser {
      * Main entry point
      * 
      * Program
-     *  : NumericLiteral
+     *  : Literal
      */
     Program() {
         return {

@@ -1,5 +1,6 @@
 /**
  * Tokenizer spec.
+ * A regex processor is a state machine. JS abstracts all of this for us but elsewhere we can learn to create one ourselves and learn about automata. 
  * 
  */
 const Spec = [
@@ -20,7 +21,7 @@ class Tokenizer {
 
     /**
      * 
-     * Initializes the string.
+     * Initializes the string. Cursors are critical.
      */
     init(string) {
         this._string = string
