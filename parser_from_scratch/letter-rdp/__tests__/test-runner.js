@@ -24,11 +24,12 @@ const parser = new Parser()
 /**
  * List of tests
  */
-const tests = [require('./literals.spec')]
+const tests = [require('./literals.spec'),
+require('./statement_list.spec')]
 
 function exec() {
     const program =
-                `
+        `
         /**
          * skip this
          */
@@ -45,11 +46,11 @@ function exec() {
 
 exec()
 
-function test(program, expected){
+function test(program, expected) {
     const ast = parser.parse(program)
     assert.deepEqual(ast, expected)
 }
 
-tests.forEach(testRun =>{testRun(test)})
+tests.forEach(testRun => { testRun(test) })
 
 console.log('All assertions passed')
