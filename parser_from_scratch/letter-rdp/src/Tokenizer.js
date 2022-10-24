@@ -7,6 +7,7 @@ const Spec = [
     [/^\s+/, null], // ignore whitespace
     [/^\/\/.*/, null], // ignore comments
     [/^\/\*[\s\S]*?\*\//, null], // multi line comments
+    [/^;/, ';'],
     [/^\d+/, 'NUMBER'],
     [/^"[^"]*"/, 'STRING'],
     [/^'[^']*'/, 'STRING']

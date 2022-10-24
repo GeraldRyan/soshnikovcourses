@@ -35,7 +35,7 @@ function exec() {
         "hello";
 
         // Number:
-        '42'
+        '42';
         `
 
     const ast = parser.parse(program)
@@ -50,8 +50,6 @@ function test(program, expected){
     assert.deepEqual(ast, expected)
 }
 
-tests.forEach(testRun =>{
-    testRun(test)
-})
+tests.forEach(testRun =>{testRun(test)})
 
 console.log('All assertions passed')

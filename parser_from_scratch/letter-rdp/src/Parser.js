@@ -32,19 +32,68 @@ class Parser {
      * Main entry point
      * 
      * Program
-     *  : Literal
+     *  : StatementList
      */
     Program() {
         return {
             type: 'Program',
-            body: this.Literal()
+            body: this.StatementList()
         }
+    }
+
+    /**
+     * StatementList
+     *  :Statement
+     *  | StatementList Statement -> Statement Statement Statement Statement
+     *  ; 
+     */
+    StatementList(){
+        const statementList = [this.Statement()]
+
+        while (this._lookahead != null){ // necessary in left-recursive top down parsers
+            statementList.push(this.Statement())
+        }
+        return statementList
+    }
+
+    /**
+     * Statement
+     *  : ExpressionStatement
+     *  ;
+     */
+    Statement(){
+        return this.ExpressionStatement()
+    }
+
+    /**
+     * ExpressionStatement
+     *  : Expression ';'
+     *  ;
+     */
+    ExpressionStatement(){
+        const expression = this.Expression()
+        this._eat(';')
+        return {
+            type: 'ExpressionStatement',
+            expression
+        }
+    }
+
+    /**
+     * Expression
+     *  : Literal
+     *  // todo implement more types
+     *  ;
+     */
+    Expression(){
+        return this.Literal();
     }
 
     /**
      *  Literal
      *  : NumericLiteral
      *  | StringLiteral
+     * ;
      */
     Literal(){
         switch(this._lookahead.type){
