@@ -24,8 +24,12 @@ const parser = new Parser()
 /**
  * List of tests
  */
-const tests = [require('./literals.spec'),
-require('./statement_list.spec')]
+const tests =
+    [
+        require('./literals.spec'),
+        require('./statement_list.spec'),
+        require('./block.spec')
+    ]
 
 function exec() {
     const program =
