@@ -28,7 +28,8 @@ const tests =
     [
         require('./literals.spec'),
         require('./statement_list.spec'),
-        require('./block.spec')
+        require('./block.spec'),
+        require('./empty_statement.spec')
     ]
 
 function exec() {
