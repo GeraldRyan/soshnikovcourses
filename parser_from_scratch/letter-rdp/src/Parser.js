@@ -62,7 +62,8 @@ const SExpressionFactory = {
         return expression
     },
     StringLiteral(value) {
-        return `"${value}"`
+        return value
+        // return `"${value}"`
     },
     NumericLiteral(value) {
         return value
@@ -70,7 +71,7 @@ const SExpressionFactory = {
 }
 
 
-const AST_MODE = 'default'
+const AST_MODE = 's-expression'
 
 const factory = AST_MODE === 'default' ? DefaultFactory : SExpressionFactory
 

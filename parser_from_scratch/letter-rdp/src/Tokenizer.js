@@ -65,6 +65,13 @@ class Tokenizer {
                 return this.getNextToken()
             }
 
+            if (tokenType == 'NUMBER'){
+                return {
+                    type: tokenType,
+                    value: parseFloat(tokenValue)
+                }
+            }
+
             return {
                 type: tokenType,
                 value: tokenValue

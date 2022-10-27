@@ -41,21 +41,24 @@ function exec() {
         "hello";
 
         // Number:
-        '42';
+        42;
+        10;
         `
 
     const ast = parser.parse(program)
-
     console.log(JSON.stringify(ast, null, 2))
 }
 
 exec()
+
 
 function test(program, expected) {
     const ast = parser.parse(program)
     assert.deepEqual(ast, expected)
 }
 
-tests.forEach(testRun => { testRun(test) })
+// Run all tests
 
-console.log('All assertions passed')
+// tests.forEach(testRun => { testRun(test) })
+
+// console.log('All assertions passed')
