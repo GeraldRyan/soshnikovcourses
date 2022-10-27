@@ -2,13 +2,85 @@
  * Letter parseArgs: recursive descent implmenentation
  */
 
-const {Tokenizer} = require('./Tokenizer')
+const { Tokenizer } = require('./Tokenizer')
+
+// ---------------------------
+// Default AST node factories
+
+const DefaultFactory = {
+    Program(body) {
+        return {
+            type: 'Program',
+            body
+        }
+    },
+    EmptyStatement() {
+        return {
+            type: 'EmptyStatement'
+        }
+    },
+    BlockStatement(body) {
+        return {
+            type: 'BlockStatement',
+            body
+        }
+    },
+    ExpressionStatement(expression) {
+        return {
+            type: 'ExpressionStatement',
+            expression
+        }
+    },
+    StringLiteral(value) {
+        return {
+            type: 'StringLiteral',
+            value: value
+        }
+    },
+    NumericLiteral(value) {
+        return {
+            type: 'NumericLiteral',
+            value: value
+        }
+    },
+}
+
+
+// ---------------------
+// S-Expression Factory
+
+const SExpressionFactory = {
+    Program(body) {
+        return ['begin', body]
+    },
+
+    EmptyStatement() { },
+    BlockStatement(body) {
+        return ['begin', body]
+    },
+    ExpressionStatement(expression) {
+        return expression
+    },
+    StringLiteral(value) {
+        return `"${value}"`
+    },
+    NumericLiteral(value) {
+        return value
+    }
+}
+
+
+const AST_MODE = 'default'
+
+const factory = AST_MODE === 'default' ? DefaultFactory : SExpressionFactory
+
+
 class Parser {
 
     /**
      * Initializes the parser
      */
-    constructor(){
+    constructor() {
         this._string = ''
         this._tokenizer = new Tokenizer() // The tokenizer is embedded into the parser object. The parser is composed of a tokenizer, as well as the string to parse. 
     }
@@ -16,7 +88,7 @@ class Parser {
     /**
      * Parses a string into an AST
      */
-    parse(string){
+    parse(string) {
         this._string = string
         this._tokenizer.init(string)
 
@@ -35,10 +107,7 @@ class Parser {
      *  : StatementList
      */
     Program() {
-        return {
-            type: 'Program',
-            body: this.StatementList()
-        }
+        return factory.Program(this.StatementList())
     }
 
     /**
@@ -47,10 +116,10 @@ class Parser {
      *  | StatementList Statement -> Statement Statement Statement Statement
      *  ; 
      */
-    StatementList(stopLookahead = null){
+    StatementList(stopLookahead = null) {
         const statementList = [this.Statement()]
 
-        while (this._lookahead != null && this._lookahead.type !== stopLookahead){
+        while (this._lookahead != null && this._lookahead.type !== stopLookahead) {
             statementList.push(this.Statement())
         }
         return statementList
@@ -63,8 +132,8 @@ class Parser {
      *  | EmptyStatement
      *  ;
      */
-    Statement(){
-        switch (this._lookahead.type){
+    Statement() {
+        switch (this._lookahead.type) {
             case ';': return this.EmptyStatement();
             case '{': return this.BlockStatement();
             default: return this.ExpressionStatement()
@@ -76,11 +145,9 @@ class Parser {
      *  : ';'
      *  ;
      */
-    EmptyStatement(){
+    EmptyStatement() {
         this._eat(';')
-        return {
-            type: 'EmptyStatement'
-        }
+        return factory.EmptyStatement()
     }
 
     /**
@@ -88,14 +155,11 @@ class Parser {
      *  : '{' OptStatementList '}'
      *  ;
      */
-    BlockStatement(){
+    BlockStatement() {
         this._eat('{')
         const body = this._lookahead.type != '}' ? this.StatementList('}') : []
         this._eat('}')
-        return {
-            type: 'BlockStatement',
-            body
-        }
+        return factory.BlockStatement(body)
     }
 
     /**
@@ -103,13 +167,10 @@ class Parser {
      *  : Expression ';'
      *  ;
      */
-    ExpressionStatement(){
+    ExpressionStatement() {
         const expression = this.Expression()
         this._eat(';')
-        return {
-            type: 'ExpressionStatement',
-            expression
-        }
+        return factory.ExpressionStatement(expression)
     }
 
     /**
@@ -118,7 +179,7 @@ class Parser {
      *  // todo implement more types
      *  ;
      */
-    Expression(){
+    Expression() {
         return this.Literal();
     }
 
@@ -128,8 +189,8 @@ class Parser {
      *  | StringLiteral
      * ;
      */
-    Literal(){
-        switch(this._lookahead.type){
+    Literal() {
+        switch (this._lookahead.type) {
             case 'NUMBER': return this.NumericLiteral();
             case 'STRING': return this.StringLiteral();
         }
@@ -142,12 +203,9 @@ class Parser {
      *      : STRING
      *      ;
      */
-    StringLiteral(){
+    StringLiteral() {
         const token = this._eat('STRING')
-        return {
-            type: 'StringLiteral',
-            value: token.value.slice(1,-1),
-        }
+        return factory.StringLiteral(token.value.slice(1, -1))
     }
 
     /**
@@ -155,24 +213,21 @@ class Parser {
      *  : NUMBER
      *  ;
      */
-    NumericLiteral(){
+    NumericLiteral() {
         const token = this._eat('NUMBER')
-        return {
-            type: 'NumericLiteral',
-            value: Number(token.value),
-        }
+        return factory.NumericLiteral(token.value)
     }
 
     /**
      * Expects a token of a given type
      */
-    _eat(tokenType){
+    _eat(tokenType) {
         const token = this._lookahead
         if (token == null) {
             throw new SyntaxError(`Unexpected end of input, expected: "${tokenType}`)
         }
 
-        if (token.type !== tokenType){
+        if (token.type !== tokenType) {
             throw new SyntaxError(`Unexpected token: "${token.value}", expected: "${tokenType}`)
         }
 
