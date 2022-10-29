@@ -71,7 +71,8 @@ const SExpressionFactory = {
 }
 
 
-const AST_MODE = 's-expression'
+// const AST_MODE = 's-expression'
+const AST_MODE = 'default'
 
 const factory = AST_MODE === 'default' ? DefaultFactory : SExpressionFactory
 
