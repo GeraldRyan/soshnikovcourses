@@ -14,6 +14,7 @@ const Spec = [
     [/^{/, '{'],
     [/^}/, '}'],
     [/^[+\-]/, 'ADDITIVE_OPERATOR'],
+    [/^[*\/]/, 'MULTIPLICATIVE_OPERATOR'],
 ]
 
 

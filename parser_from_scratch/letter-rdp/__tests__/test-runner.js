@@ -37,21 +37,14 @@ const tests =
 function exec() {
     const program =
         `
-        /**
-         * skip this
-         */
-        "hello";
-
-        // Number:
-        42;
-        10;
+2+3*5;
         `
 
     const ast = parser.parse(program)
     console.log(JSON.stringify(ast, null, 2))
 }
 
-// exec()
+exec()
 
 
 function test(program, expected) {
@@ -62,7 +55,7 @@ function test(program, expected) {
     catch (exception) {
         console.log('\x1b[31m ast', JSON.stringify(ast), '\x1b[0m')
         console.log("\x1b[32m expected: ", JSON.stringify(expected), '\x1b[0m')
-        throw exception    
+        throw exception
     }
 }
 
