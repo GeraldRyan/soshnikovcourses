@@ -26,10 +26,11 @@ const parser = new Parser()
  */
 const tests =
     [
-        // require('./literals.spec'),
-        // require('./statement_list.spec'),
-        // require('./block.spec'),
-        // require('./empty_statement.spec'),
+        require('./literals.spec'),
+        require('./statement_list.spec'),
+        require('./block.spec'),
+        require('./empty_statement.spec'),
+        require('./comments.spec'),
         require('./math.spec')
     ]
 
