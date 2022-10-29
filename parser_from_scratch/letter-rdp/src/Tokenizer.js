@@ -13,6 +13,7 @@ const Spec = [
     [/^'[^']*'/, 'STRING'],
     [/^{/, '{'],
     [/^}/, '}'],
+    [/^[+\-]/, 'ADDITIVE_OPERATOR'],
 ]
 
 

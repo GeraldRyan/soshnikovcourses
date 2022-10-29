@@ -26,10 +26,11 @@ const parser = new Parser()
  */
 const tests =
     [
-        require('./literals.spec'),
-        require('./statement_list.spec'),
-        require('./block.spec'),
-        require('./empty_statement.spec')
+        // require('./literals.spec'),
+        // require('./statement_list.spec'),
+        // require('./block.spec'),
+        // require('./empty_statement.spec'),
+        require('./math.spec')
     ]
 
 function exec() {
@@ -49,12 +50,19 @@ function exec() {
     console.log(JSON.stringify(ast, null, 2))
 }
 
-exec()
+// exec()
 
 
 function test(program, expected) {
     const ast = parser.parse(program)
-    assert.deepEqual(ast, expected)
+    try {
+        assert.deepEqual(ast, expected)
+    }
+    catch (exception) {
+        console.log('\x1b[31m ast', JSON.stringify(ast), '\x1b[0m')
+        console.log("\x1b[32m expected: ", JSON.stringify(expected), '\x1b[0m')
+        throw exception    
+    }
 }
 
 // Run all tests
@@ -62,3 +70,11 @@ function test(program, expected) {
 tests.forEach(testRun => { testRun(test) })
 
 console.log('All assertions passed')
+
+
+// debugger tools
+function inspectObject(object) {
+    for (key in object) {
+        console.log("the attribute " + key + " is equal to " + object[key]);
+    }
+}

@@ -84,7 +84,7 @@ class Parser {
      */
     constructor() {
         this._string = ''
-        this._tokenizer = new Tokenizer() // The tokenizer is embedded into the parser object. The parser is composed of a tokenizer, as well as the string to parse. 
+        this._tokenizer = new Tokenizer() // The tokenizer is embedded into the parser object. The parser is composed of a tokenizer, as well as the string to parse.
     }
 
     /**
@@ -96,7 +96,6 @@ class Parser {
 
         // Prime the tokenizer to obtain the first token which is our lookahead, used for predictive parsing
         this._lookahead = this._tokenizer.getNextToken()
-
         // Parse recursively starting from main entry point, the Program:
 
         return this.Program()
@@ -171,7 +170,8 @@ class Parser {
      */
     ExpressionStatement() {
         const expression = this.Expression()
-        this._eat(';')
+
+        this._eat(';') /// YOu better be damn sure you're at the end of your expression statement. 
         return factory.ExpressionStatement(expression)
     }
 
@@ -182,7 +182,31 @@ class Parser {
      *  ;
      */
     Expression() {
-        return this.Literal();
+        return this.AdditiveExpression();
+    }
+
+    /**
+     * AdditiveExpression
+     *  : Literal
+     *  | AdditiveExpression ADDITIVE_OPERATOR Literal
+     */
+    AdditiveExpression(){
+        let left = this.Literal();
+
+        while (this._lookahead.type === 'ADDITIVE_OPERATOR') {
+            // Operator: +, -
+            const operator = this._eat('ADDITIVE_OPERATOR').value
+
+            const right = this.Literal()
+
+            left = {
+                type: 'BinaryExpression',
+                operator,
+                left,
+                right,
+            }
+        }
+        return left
     }
 
     /**
