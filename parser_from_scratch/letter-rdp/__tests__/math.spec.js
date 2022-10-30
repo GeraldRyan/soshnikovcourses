@@ -174,6 +174,7 @@ module.exports = test => {
             }
         }]
     })
+    
     // Multiplication (Parenthesized):
     test(`(3 + 2) * 4;`, {
         type: 'Program',

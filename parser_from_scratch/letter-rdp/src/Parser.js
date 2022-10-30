@@ -193,6 +193,7 @@ class Parser {
      *  | AdditiveExpression ADDITIVE_OPERATOR Literal
      */
     AdditiveExpression() {
+        return this._BinaryExpression('MultiplicativeExpression', 'ADDITIVE_OPERATOR')
         let left = this.MultiplicativeExpression();
 
         while (this._lookahead.type === 'ADDITIVE_OPERATOR') {
@@ -217,12 +218,34 @@ class Parser {
      *  | MultiplicativeExpression MULTIPLICATIVE_OPERATOR PrimaryExpression -> PrimaryExpression MULTIPLICATIVE_OPERATOR
      */
     MultiplicativeExpression() {
+        return this._BinaryExpression('PrimaryExpression', 'MULTIPLICATIVE_OPERATOR')
         let left = this.PrimaryExpression();
         while (this._lookahead.type === 'MULTIPLICATIVE_OPERATOR') {
             // Operator: *, /
             const operator = this._eat('MULTIPLICATIVE_OPERATOR').value
 
             const right = this.PrimaryExpression()
+
+            left = {
+                type: 'BinaryExpression',
+                operator,
+                left,
+                right,
+            }
+        }
+        return left
+    }
+
+    /**
+     * Generic binary expression
+     * 
+     */
+    _BinaryExpression(builderName, operatorToken){
+        let left = this[builderName]();
+        while (this._lookahead.type === operatorToken) {
+            const operator = this._eat(operatorToken).value
+
+            const right = this[builderName]()
 
             left = {
                 type: 'BinaryExpression',
@@ -252,6 +275,8 @@ class Parser {
      * ParenthesizedExpression
      *  : '(' Expression ')'
      *  ;
+     * 
+     * (Implements precedence inside AST)
      */
     ParenthesizedExpression() {
         this._eat('(')
