@@ -1,6 +1,7 @@
 /**
  * Tokenizer spec.
  * A regex processor is a state machine. JS abstracts all of this for us but elsewhere we can learn to create one ourselves and learn about automata. 
+ * This is the Token Maker, as opposed to the Node Maker
  * 
  */
 const Spec = [
@@ -15,6 +16,8 @@ const Spec = [
     [/^}/, '}'],
     [/^[+\-]/, 'ADDITIVE_OPERATOR'],
     [/^[*\/]/, 'MULTIPLICATIVE_OPERATOR'],
+    [/^\(/, '('],
+    [/^\)/, ')'],
 ]
 
 

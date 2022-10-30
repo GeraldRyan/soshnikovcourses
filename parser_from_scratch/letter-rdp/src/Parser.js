@@ -76,7 +76,9 @@ const AST_MODE = 'default'
 
 const factory = AST_MODE === 'default' ? DefaultFactory : SExpressionFactory
 
-
+/**
+ * This is the AstNode maker as opposed to the Token maker. It consumes tokens and makes nodes, and entire trees. 
+ */
 class Parser {
 
     /**
@@ -190,7 +192,7 @@ class Parser {
      *  : MultiplicativeExpression
      *  | AdditiveExpression ADDITIVE_OPERATOR Literal
      */
-    AdditiveExpression(){
+    AdditiveExpression() {
         let left = this.MultiplicativeExpression();
 
         while (this._lookahead.type === 'ADDITIVE_OPERATOR') {
@@ -214,7 +216,7 @@ class Parser {
      *  : MultiplicativeExpression
      *  | MultiplicativeExpression MULTIPLICATIVE_OPERATOR PrimaryExpression -> PrimaryExpression MULTIPLICATIVE_OPERATOR
      */
-     MultiplicativeExpression(){
+    MultiplicativeExpression() {
         let left = this.PrimaryExpression();
         while (this._lookahead.type === 'MULTIPLICATIVE_OPERATOR') {
             // Operator: *, /
@@ -235,17 +237,34 @@ class Parser {
     /**
      * PrimaryExpression
      *  : Literal
+     *  | ParenthesizedExpression
      * ;
      */
-     PrimaryExpression(){
-        return this.Literal();
-     }
+    PrimaryExpression() {
+        switch (this._lookahead.type) {
+            case '(': return this.ParenthesizedExpression()
+            default:
+                return this.Literal();
+        }
+    }
+
+    /**
+     * ParenthesizedExpression
+     *  : '(' Expression ')'
+     *  ;
+     */
+    ParenthesizedExpression() {
+        this._eat('(')
+        const expression = this.Expression()
+        this._eat(')')
+        return expression
+    }
 
     /**
      *  Literal
      *  : NumericLiteral
      *  | StringLiteral
-     * ;
+     *  ;
      */
     Literal() {
         switch (this._lookahead.type) {
