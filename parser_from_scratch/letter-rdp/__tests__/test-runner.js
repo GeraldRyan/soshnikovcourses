@@ -31,13 +31,14 @@ const tests =
         require('./block.spec'),
         require('./empty_statement.spec'),
         require('./comments.spec'),
-        require('./math.spec')
+        require('./math.spec'),
+        require('./assignment.spec')
     ]
 
 function exec() {
     const program =
         `
-2+3*5;
+x += 1;
         `
 
     const ast = parser.parse(program)

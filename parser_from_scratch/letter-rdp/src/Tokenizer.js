@@ -9,15 +9,21 @@ const Spec = [
     [/^\/\/.*/, null], // ignore comments
     [/^\/\*[\s\S]*?\*\//, null], // multi line comments
     [/^;/, ';'],
-    [/^\d+/, 'NUMBER'],
+    [/^\d+/, 'NUMBER'], // must be above identifiers
     [/^"[^"]*"/, 'STRING'],
     [/^'[^']*'/, 'STRING'],
     [/^{/, '{'],
     [/^}/, '}'],
+    [/^=/, 'SIMPLE_ASSIGN'], // must go before additive or multp
+    [/^[\*\/\+\-]=/, 'COMPLEX_ASSIGN'],
     [/^[+\-]/, 'ADDITIVE_OPERATOR'],
     [/^[*\/]/, 'MULTIPLICATIVE_OPERATOR'],
     [/^\(/, '('],
     [/^\)/, ')'],
+
+    [/^\w+/, 'IDENTIFIER'],
+
+
 ]
 
 
