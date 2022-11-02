@@ -108,6 +108,7 @@ class Parser {
      * 
      * Program
      *  : StatementList
+     *  ;
      */
     Program() {
         return factory.Program(this.StatementList())
