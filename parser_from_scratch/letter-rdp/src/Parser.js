@@ -204,7 +204,7 @@ class Parser {
             type: 'AssignmentExpression',
             operator: this.AssignmentOperator().value,
             left: this._checkValidAssignmentTarget(left),
-            right: this.AssignmentExpression()
+            right: this.AssignmentExpression(),
         }
     }
 
