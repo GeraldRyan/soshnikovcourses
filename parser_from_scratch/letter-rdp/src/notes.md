@@ -148,3 +148,6 @@ It makes a dual call to the same _BinaryExpression, with two sets of args:
 'PrimaryExpression', 'MULTIPLICATIVE_OPERATOR'
 
 and the first is basically the method to call, and the 2nd is the operator to check against to know whether to go into the while loop and return a TOLR. We will return a TORL if it is a BinaryExpression, on the lowest (2nd) call if it is a mult string and on the first highest call if it is additive. 
+
+It is clever, but of course these are patterns one learns to see, and then takes them for granted. 
+

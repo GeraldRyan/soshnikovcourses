@@ -32,13 +32,19 @@ const tests =
         require('./empty_statement.spec'),
         require('./comments.spec'),
         require('./math.spec'),
-        require('./assignment.spec')
+        require('./assignment.spec'),
+        require('./variables.spec')
     ]
 
 function exec() {
     const program =
         `
-4* 3 * 2 * 1;
+
+let y;
+let a, b;
+let c, d = 10;
+let x = 42;
+r = 10;
         `
 
     const ast = parser.parse(program)

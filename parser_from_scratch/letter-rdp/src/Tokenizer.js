@@ -8,19 +8,32 @@ const Spec = [
     [/^\s+/, null], // ignore whitespace
     [/^\/\/.*/, null], // ignore comments
     [/^\/\*[\s\S]*?\*\//, null], // multi line comments
+
+    // symbols/delimiters:
     [/^;/, ';'],
+    [/^{/, '{'],
+    [/^}/, '}'],
+    [/^\(/, '('],
+    [/^\)/, ')'],
+    [/^,/, ','],
+
+    // keywords
+    [/^\blet\b/, 'let'],
+
+
     [/^\d+/, 'NUMBER'], // must be above identifiers
     [/^"[^"]*"/, 'STRING'],
     [/^'[^']*'/, 'STRING'],
-    [/^{/, '{'],
-    [/^}/, '}'],
+
+
+
+    // assignment operators
     [/^=/, 'SIMPLE_ASSIGN'], // must go before additive or multp
     [/^[\*\/\+\-]=/, 'COMPLEX_ASSIGN'],
     [/^[+\-]/, 'ADDITIVE_OPERATOR'],
     [/^[*\/]/, 'MULTIPLICATIVE_OPERATOR'],
-    [/^\(/, '('],
-    [/^\)/, ')'],
 
+    // identifiers
     [/^\w+/, 'IDENTIFIER'],
 
 
