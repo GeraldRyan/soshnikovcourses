@@ -33,18 +33,27 @@ const tests =
         require('./comments.spec'),
         require('./math.spec'),
         require('./assignment.spec'),
-        require('./variables.spec')
+        require('./variables.spec'),
+        require('./if.spec'),
     ]
 
 function exec() {
     const program =
         `
 
+if (x){
+    x = o;
+} else {
+    x += 1;
+}
+
+
 let y;
 let a, b;
 let c, d = 10;
 let x = 42;
 r = 10;
+let foo = bar = 100;
         `
 
     const ast = parser.parse(program)
