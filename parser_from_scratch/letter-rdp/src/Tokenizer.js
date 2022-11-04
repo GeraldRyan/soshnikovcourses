@@ -31,9 +31,14 @@ const Spec = [
 
     // assignment operators
     [/^=/, 'SIMPLE_ASSIGN'], // must go before additive or multp
+
+    // Math operators
     [/^[\*\/\+\-]=/, 'COMPLEX_ASSIGN'],
     [/^[+\-]/, 'ADDITIVE_OPERATOR'],
     [/^[*\/]/, 'MULTIPLICATIVE_OPERATOR'],
+
+    // relational operators
+    [/^[><]=?/, 'RELATIONAL_OPERATOR'],
 
     // identifiers
     [/^\w+/, 'IDENTIFIER'],
