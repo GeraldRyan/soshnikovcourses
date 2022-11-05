@@ -35,14 +35,16 @@ const tests =
         require('./assignment.spec'),
         require('./variables.spec'),
         require('./if.spec'),
-        require('./relational.spec')
+        require('./relational.spec'),
+        require('./equality.spec'),
+        require('./logical.spec')
     ]
 
 function exec() {
     const program =
         `
 
-x + 5 < 10;
+x + 5 > 10 == true;
         `
 
     const ast = parser.parse(program)

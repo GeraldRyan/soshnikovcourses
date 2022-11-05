@@ -21,27 +21,36 @@ const Spec = [
     [/^\blet\b/, 'let'],
     [/^\bif\b/, 'if'],
     [/^\belse\b/, 'else'],
+    [/^\btrue\b/, 'true'],
+    [/^\bfalse\b/, 'false'],
+    [/^\bnull\b/, 'null'],
 
 
     [/^\d+/, 'NUMBER'], // must be above identifiers
+
+    // identifiers
+    [/^\w+/, 'IDENTIFIER'],
+
     [/^"[^"]*"/, 'STRING'],
     [/^'[^']*'/, 'STRING'],
 
-
+    [/^[=!]=/, 'EQUALITY_OPERATOR'], // must be above assignment operator
 
     // assignment operators
     [/^=/, 'SIMPLE_ASSIGN'], // must go before additive or multp
+    [/^[\*\/\+\-]=/, 'COMPLEX_ASSIGN'],
 
     // Math operators
-    [/^[\*\/\+\-]=/, 'COMPLEX_ASSIGN'],
     [/^[+\-]/, 'ADDITIVE_OPERATOR'],
     [/^[*\/]/, 'MULTIPLICATIVE_OPERATOR'],
 
     // relational operators
     [/^[><]=?/, 'RELATIONAL_OPERATOR'],
 
-    // identifiers
-    [/^\w+/, 'IDENTIFIER'],
+    // logical operators
+    [/^&&/, 'LOGICAL_AND'],
+    [/^\|\|/, 'LOGICAL_OR'],
+
 
 
 ]
