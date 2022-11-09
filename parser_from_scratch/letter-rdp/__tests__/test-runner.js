@@ -39,12 +39,20 @@ const tests =
         require('./equality.spec'),
         require('./logical.spec'),
         require('./unary.spec'),
+        require('./while.spec'),
+        require('./dowhile.spec'),
+        require('./forloop.spec'),
+        require('./function_declaration.spec'),
     ]
 
 function exec() {
     const program =
         `
-        +x * -10;
+        ;
+        def square(x){
+            return x * x;
+        }
+        // square(2);
         `
 
     const ast = parser.parse(program)

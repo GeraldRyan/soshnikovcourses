@@ -136,6 +136,9 @@ class Parser {
      *  | EmptyStatement,
      *  | VariableStatement
      *  | IfStatement
+     *  | IterationStatement
+     *  | FunctionDeclaration
+     *  | ReturnStatement
      *  ;
      */
     Statement() {
@@ -144,9 +147,163 @@ class Parser {
             case 'if': return this.IfStatement();
             case '{': return this.BlockStatement();
             case 'let': return this.VariableStatement();
+            case 'while':
+            case 'do':
+            case 'for': return this.IterationStatement();
+            case 'def': return this.FunctionDeclaration();
+            case 'return': return this.ReturnStatement();
             default: return this.ExpressionStatement()
         }
     }
+
+    /**
+     * FunctionDeclaration
+     *  : 'def' Identifier '(' OptFormalParameterList ')' BlockStatement
+     */
+    FunctionDeclaration(){
+        this._eat('def')
+        const name = this.Identifier()
+        this._eat('(')
+        const params = this._lookahead.type !== ')' ? this.FormalParameterList() : []
+        this._eat(')')
+        const body = this.BlockStatement();
+
+        return {
+            type: 'FunctionDeclaration',
+            name, 
+            params,
+            body
+        }
+
+    }
+
+    /**
+     * FormalParameterList
+     *  : Identifier
+     *  | FormalParameterList ',' Identifier
+     *  ;
+     */
+    FormalParameterList(){
+        const params = []
+        do {
+            params.push(this.Identifier())
+        } while (this._lookahead.type === ',' && this._eat(','))
+        return params
+    }
+
+    /**
+     * ReturnStatement
+     *  : 'return' OptExpression
+     *  ;
+     */
+     ReturnStatement(){
+        this._eat('return')
+        const argument = this._lookahead.type !== ';' ? this.Expression() : null
+        this._eat(';')
+        return {
+            type: 'ReturnStatement',
+            argument
+        }
+    }
+
+    /**
+     * IterationStatement
+     *  : WhileStatement
+     *  | DoWhileStatement
+     *  | ForStatement
+     *  ;
+     *  
+     */
+    IterationStatement() {
+        switch (this._lookahead.type) {
+            case 'while': return this.WhileStatement()
+            case 'do': return this.DoWhileStatement()
+            case 'for': return this.ForStatement()
+        }
+    }
+
+    /**
+     * WhileStatement
+     *  : 'while' '(' Expression ')' Statement
+     * ;
+     */
+    WhileStatement() {
+        this._eat('while')
+        this._eat('(')
+        const test = this.Expression()
+        this._eat(')')
+        const body = this.Statement()
+
+        return {
+            type: 'WhileStatement',
+            test,
+            body,
+        }
+    }
+
+    /**
+     * DoWhileStatement
+     *  : 'while' '(' Expression ')' Statement
+     * ;
+     */
+    DoWhileStatement() {
+        this._eat('do')
+        const body = this.Statement()
+        this._eat('while')
+        this._eat('(')
+        const test = this.Expression()
+        this._eat(')')
+        this._eat(';')
+
+        return {
+            type: 'DoWhileStatement',
+            body,
+            test,
+        }
+    }
+
+    /**
+    * ForStatement
+    *  : 'For' '(' OptForStatementInit ';' OptExpression ';' OptExpression ')' Statement
+    * ;
+    */
+    ForStatement() {
+        this._eat('for')
+        this._eat('(')
+
+        const init = this._lookahead.type !== ';' ? this.ForStatementInit() : null
+        this._eat(';')
+
+        const test = this._lookahead.type !== ';' ? this.Expression() : null
+        this._eat(';')
+
+        const update = this._lookahead.type !== ')' ? this.Expression() : null
+        this._eat(')')
+
+
+        const body = this.Statement()
+
+        return {
+            type: 'ForStatement',
+            init,
+            test,
+            update,
+            body
+        }
+    }
+
+    /**
+     * ForStatementInit
+     *  : VariableStatementInit
+     *  ;
+     */
+    ForStatementInit() {
+        if (this._lookahead.type === 'let'){
+            return this.VariableStatementInit()
+        }
+        return this.Expression()
+    }
+
 
     /**
      * IfStatement
@@ -174,18 +331,28 @@ class Parser {
     }
 
     /**
-     * VariableStatement
-     *  : 'let' VariableDeclarationList ';'
+     * VariableStatementInit
+     *  : 'let' VariableDeclarationList
      *  ;
      */
-    VariableStatement() {
-        this._eat('let');
+     VariableStatementInit(){
+        this._eat('let')
         const declarations = this.VariableDeclarationList();
-        this._eat(';')
         return {
             type: 'VariableStatement',
             declarations
         }
+     }
+
+    /**
+     * VariableStatement
+     *  : 'VariableStatement ';'
+     *  ;
+     */
+    VariableStatement() {
+        const variableStatement = this.VariableStatementInit()
+        this._eat(';')
+        return variableStatement
     }
 
     /**
@@ -197,7 +364,6 @@ class Parser {
      */
     VariableDeclarationList() {
         const declarations = [];
-
         do {
             declarations.push(this.VariableDeclaration())
         } while (this._lookahead.type === ',' && this._eat(','))
@@ -364,9 +530,9 @@ class Parser {
         return this._eat('COMPLEX_ASSIGN')
     }
 
-    _LogicalExpression(builderName, operatorToken){
+    _LogicalExpression(builderName, operatorToken) {
         let left = this[builderName]()
-        while (this._lookahead.type === operatorToken){
+        while (this._lookahead.type === operatorToken) {
             const operator = this._eat(operatorToken).value;
             const right = this[builderName]()
 
@@ -390,9 +556,9 @@ class Parser {
      *  | EqualityExpression
      *  ;
      */
-     LogicalANDExpression(){
+    LogicalANDExpression() {
         return this._LogicalExpression('EqualityExpression', 'LOGICAL_AND')
-     }
+    }
 
     /**
      * Logical OR expression
@@ -404,9 +570,9 @@ class Parser {
      *  | LogicalORExpression
      *  ;
      */
-     LogicalORExpression(){
+    LogicalORExpression() {
         return this._LogicalExpression('LogicalANDExpression', 'LOGICAL_OR')
-     }
+    }
 
     /**
      * EQUALITY_OPERATOR: ==, !=
@@ -502,9 +668,9 @@ class Parser {
      *  | LOGICAL_NOT UnaryExpression
      *  ;
      */
-    UnaryExpression(){
+    UnaryExpression() {
         let operator
-        switch (this._lookahead.type){
+        switch (this._lookahead.type) {
             case 'ADDITIVE_OPERATOR':
                 operator = this._eat('ADDITIVE_OPERATOR').value
                 break;
@@ -512,7 +678,7 @@ class Parser {
                 operator = this._eat('LOGICAL_NOT').value
                 break;
         }
-        if (operator != null){
+        if (operator != null) {
             return {
                 type: 'UnaryExpression',
                 operator,
@@ -527,7 +693,7 @@ class Parser {
      * LeftHandSideExpression
      *  
      */
-    LeftHandSideExpression(){
+    LeftHandSideExpression() {
         return this.PrimaryExpression()
     }
 
@@ -554,11 +720,11 @@ class Parser {
      * Whether the token is a literal
      */
     _isLiteral(tokenType) {
-        return (tokenType === 'NUMBER' || 
-        tokenType === 'STRING' || 
-        tokenType === 'true' || 
-        tokenType === 'false' || 
-        tokenType == 'null'
+        return (tokenType === 'NUMBER' ||
+            tokenType === 'STRING' ||
+            tokenType === 'true' ||
+            tokenType === 'false' ||
+            tokenType == 'null'
         )
     }
 
