@@ -43,16 +43,20 @@ const tests =
         require('./dowhile.spec'),
         require('./forloop.spec'),
         require('./function_declaration.spec'),
+        require('./member.spec'),
     ]
 
 function exec() {
     const program =
         `
         ;
-        def square(x){
-            return x * x;
+        let s = "hello world";
+        let i = 0;
+        while (i < s.length) {
+            s[i];
+            // console.log(i, s[i]);
+            i += 1;
         }
-        // square(2);
         `
 
     const ast = parser.parse(program)

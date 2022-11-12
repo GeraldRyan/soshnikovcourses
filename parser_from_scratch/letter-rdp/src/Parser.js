@@ -160,7 +160,7 @@ class Parser {
      * FunctionDeclaration
      *  : 'def' Identifier '(' OptFormalParameterList ')' BlockStatement
      */
-    FunctionDeclaration(){
+    FunctionDeclaration() {
         this._eat('def')
         const name = this.Identifier()
         this._eat('(')
@@ -170,7 +170,7 @@ class Parser {
 
         return {
             type: 'FunctionDeclaration',
-            name, 
+            name,
             params,
             body
         }
@@ -183,7 +183,7 @@ class Parser {
      *  | FormalParameterList ',' Identifier
      *  ;
      */
-    FormalParameterList(){
+    FormalParameterList() {
         const params = []
         do {
             params.push(this.Identifier())
@@ -196,7 +196,7 @@ class Parser {
      *  : 'return' OptExpression
      *  ;
      */
-     ReturnStatement(){
+    ReturnStatement() {
         this._eat('return')
         const argument = this._lookahead.type !== ';' ? this.Expression() : null
         this._eat(';')
@@ -298,7 +298,7 @@ class Parser {
      *  ;
      */
     ForStatementInit() {
-        if (this._lookahead.type === 'let'){
+        if (this._lookahead.type === 'let') {
             return this.VariableStatementInit()
         }
         return this.Expression()
@@ -335,14 +335,14 @@ class Parser {
      *  : 'let' VariableDeclarationList
      *  ;
      */
-     VariableStatementInit(){
+    VariableStatementInit() {
         this._eat('let')
         const declarations = this.VariableDeclarationList();
         return {
             type: 'VariableStatement',
             declarations
         }
-     }
+    }
 
     /**
      * VariableStatement
@@ -476,15 +476,6 @@ class Parser {
     }
 
     /**
-     * LeftHandSideExpression
-     *     : Identifier
-     *     ;
-     */
-    LeftHandSideExpression() {
-        return this.Identifier()
-    }
-
-    /**
      * Identifier
      *     : IDENTIFIER
      *     ;
@@ -501,7 +492,7 @@ class Parser {
      * Extra check whether it's a valid assignment target
      */
     _checkValidAssignmentTarget(node) {
-        if (node.type === 'Identifier') {
+        if (node.type === 'Identifier' || node.type === 'MemberExpression') {
             return node
         }
         throw new SyntaxError('Invalid left-hand side in assignment expression')
@@ -691,10 +682,48 @@ class Parser {
 
     /**
      * LeftHandSideExpression
-     *  
+     *  : MemberExpression
+     *  ;
      */
     LeftHandSideExpression() {
-        return this.PrimaryExpression()
+        return this.MemberExpression()
+    }
+
+    /**
+     * MemberExpression
+     *  : PrimaryExpression
+     *  : MemberExpression '.' Identifier
+     *  : MemberExpression '[' Expression ']'
+     *  ;
+     */
+    MemberExpression() {
+        let object = this.PrimaryExpression()
+
+        while (this._lookahead.type === '.' || this._lookahead.type === '[') {
+            if (this._lookahead.type === '.') {
+                this._eat('.')
+                const property = this.Identifier()
+                object = {
+                    type: 'MemberExpression',
+                    computed: false,
+                    object,
+                    property
+                }
+            }
+
+            if (this._lookahead.type === '[') {
+                this._eat('[')
+                const property = this.Expression()
+                this._eat(']')
+                object = {
+                    type: 'MemberExpression',
+                    computed: true,
+                    object,
+                    property
+                }
+            }
+        }
+        return object
     }
 
     /**
@@ -712,7 +741,8 @@ class Parser {
             case '(': return this.ParenthesizedExpression()
             case 'IDENTIFIER': return this.Identifier()
             default:
-                return this.LeftHandSideExpression();
+                throw new SyntaxError('Unexpected primary expression')
+                // return this.LeftHandSideExpression();
         }
     }
 
