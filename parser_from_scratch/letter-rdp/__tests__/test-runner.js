@@ -44,6 +44,7 @@ const tests =
         require('./forloop.spec'),
         require('./function_declaration.spec'),
         require('./member.spec'),
+        require('./call.spec'),
     ]
 
 function exec() {
@@ -54,7 +55,7 @@ function exec() {
         let i = 0;
         while (i < s.length) {
             s[i];
-            // console.log(i, s[i]);
+            console.log(i, s[i]);
             i += 1;
         }
         `
