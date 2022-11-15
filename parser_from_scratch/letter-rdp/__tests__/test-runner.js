@@ -45,19 +45,35 @@ const tests =
         require('./function_declaration.spec'),
         require('./member.spec'),
         require('./call.spec'),
+        require('./class.spec'),
     ]
 
 function exec() {
     const program =
         `
-        ;
-        let s = "hello world";
-        let i = 0;
-        while (i < s.length) {
-            s[i];
-            console.log(i, s[i]);
-            i += 1;
+        class Point {
+            def constructor(x,y){
+                this.x = x;
+                this.y = y;
+            }
+            def calc() {
+                return this.x + this.y;
+            }
         }
+
+        class Point3D extends Point {
+            def constructor(x,y,z){
+                super(x,y);
+                this.z = z;
+            }
+
+            def calc() {
+                return super() + this.z;
+            }
+        }
+
+        let p = new Point3D(10,20,30);
+        p.calc();
         `
 
     const ast = parser.parse(program)
