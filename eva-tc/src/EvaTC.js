@@ -1,3 +1,5 @@
+const Type = require('./Type')
+
 /**
  * Typed Eva: static typechecker.
  */
@@ -15,14 +17,14 @@ class EvaTC {
          * Numbers: 10
          */
         if (this._isNumber(exp)) {
-            return 'number';
+            return Type.number;
         }
 
         /**
          * String: "foo"
          */
         if (this._isString(exp)) {
-            return 'string';
+            return Type.string;
         }
 
         throw `Unknown type for expression ${exp}.`
@@ -40,7 +42,7 @@ class EvaTC {
      * Whether expression is a string.
      */
     _isString(exp) {
-        return typeof exp === 'string'
+        return typeof exp === 'string' && exp[0] === '"' && exp.slice(-1) === '"';
     }
 
     
