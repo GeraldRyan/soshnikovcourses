@@ -27,6 +27,16 @@ class Type {
     equals(other){
         return this.name === other.name;
     }
+
+    /**
+     * From string: 'number' -> Type.number
+     */
+    static fromString(typeStr){
+        if (this.hasOwnProperty(typeStr)){
+            return this[typeStr];
+        }
+    throw `Unknown type: ${typeStr}`; // todo implement user defined types
+    }
 }
 
 /**

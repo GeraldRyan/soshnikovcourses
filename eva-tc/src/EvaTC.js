@@ -1,4 +1,6 @@
+const { env } = require('process');
 const Type = require('./Type')
+const TypeEnvironment = require('./TypeEnvironment');
 
 /**
  * Typed Eva: static typechecker.
@@ -6,10 +8,17 @@ const Type = require('./Type')
 class EvaTC {
 
     /**
+     * Creates Eva Typechecker instance with the global environment
+     */
+    constructor() {
+        this.global = this._createGlobal();
+    }
+
+    /**
      * 
      * Infers and validates type of an expression
      */
-    tc(exp) {
+    tc(exp, env = this.global) {
         // -------------------------------------------
         // Self-evaluating:
 
@@ -30,10 +39,58 @@ class EvaTC {
         // -------------
         // Math operations
         if (this._isBinary(exp)) {
-            return this._binary(exp)
+            return this._binary(exp, env)
         }
 
+        // Variable Declaration
+        // with typecheck: (var (x number) "foo") // error
+
+        if (exp[0] === 'var') {
+            const [_tag, name, value] = exp;
+
+            // Infer actual type:
+            const valueType = this.tc(value, env);
+
+            // with type check:
+            if (Array.isArray(name)) {
+                const [varName, typeStr] = name;
+
+                const expectedType = Type.fromString(typeStr);
+
+                // check this type:
+                this._expect(valueType, expectedType, value, exp);
+
+                return env.define(varName, expectedType);
+            }
+
+            // simple name
+            return env.define(name, valueType);
+        }
+
+        // variable access: foo
+
+        if (this._isVariableName(exp)) {
+            return env.lookup(exp);
+        }
+
+        console.trace()
         throw `Unknown type for expression ${exp}.`
+    }
+
+    /**
+     * Whether the expression is a variable name
+     */
+    _isVariableName(exp) {
+        return typeof exp === 'string' && /^[+\-*/<>=a-zA-Z0-9_:]+$/.test(exp);
+    }
+
+    /**
+     * Creates a global type environment
+     */
+    _createGlobal() {
+        return new TypeEnvironment({
+            'VERSION': Type.string,
+        });
     }
 
     /**
@@ -46,11 +103,11 @@ class EvaTC {
     /**
      * Binary operators
      */
-    _binary(exp) {
+    _binary(exp, env) {
         this._checkArity(exp, 2)
 
-        const t1 = this.tc(exp[1])
-        const t2 = this.tc(exp[2])
+        const t1 = this.tc(exp[1], env)
+        const t2 = this.tc(exp[2], env)
 
         const allowedTypes = this._getOperandTypesForOperator(exp[0])
 
@@ -63,8 +120,8 @@ class EvaTC {
     /**
      * Returns allowed operand types for an operator
      */
-    _getOperandTypesForOperator(operator){
-        switch(operator){
+    _getOperandTypesForOperator(operator) {
+        switch (operator) {
             case '+':
                 return [Type.string, Type.number]
             case '-':
@@ -73,7 +130,7 @@ class EvaTC {
                 return [Type.number]
             case '*':
                 return [Type.number]
-            default: 
+            default:
                 throw `Unknown operator: ${operator}.`;
         }
     }
@@ -81,28 +138,28 @@ class EvaTC {
     /**
      * Throw if operator type doesn't expect the operand;
      */
-     _expectOperatorType(type_, allowedTypes, exp){
-        if (!allowedTypes.some(t => t.equals(type_))){
+    _expectOperatorType(type_, allowedTypes, exp) {
+        if (!allowedTypes.some(t => t.equals(type_))) {
             throw `\nUnexpected type: ${type_} in ${exp}, allowed: ${allowedTypes}`;
         }
-     }
+    }
 
     /**
      * expects a type
      */
-     _expect(actualType, expectedType, value, exp){
-        if (!actualType.equals(expectedType)){
+    _expect(actualType, expectedType, value, exp) {
+        if (!actualType.equals(expectedType)) {
             this._throw(actualType, expectedType, value, exp)
         }
         return actualType
-     }
+    }
 
-     /**
-      * Throws for number of arguments
-      */
-     _throw(actualType, expectedType, value, exp){
+    /**
+     * Throws for number of arguments
+     */
+    _throw(actualType, expectedType, value, exp) {
         throw `\nExpected "${expectedType}" type for ${value} in ${exp}, but got "${actualType}" type.\n`
-     }
+    }
 
     /**
      * Throws for number of arguments
