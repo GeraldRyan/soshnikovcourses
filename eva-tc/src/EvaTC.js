@@ -15,6 +15,23 @@ class EvaTC {
     }
 
     /**
+     * Evaluates global code wrapping into a block (installs variables of implicit block into global)
+     */
+    tcGlobal(exp){
+        return this._tcBody(exp, this.global);
+    }
+
+    /**
+     * Checks body (global or function)
+     */
+    _tcBody(body, env){
+        if (body[0] === 'begin'){
+            return this._tcBlock(body, env);
+        }
+        return this.tc(body, env);
+    }
+
+    /**
      * 
      * Infers and validates type of an expression
      */
@@ -73,8 +90,42 @@ class EvaTC {
             return env.lookup(exp);
         }
 
+        // variable update: (set x 10)
+
+        if (exp[0] === 'set'){
+            const [_, ref, value] = exp;
+
+            // the type of the new value should match tot he previous type when the variable was defined
+            const valueType = this.tc(value, env);
+            const varType = this.tc(ref, env);
+
+            return this._expect(valueType, varType, value, exp);
+
+        }
+
+        // Block
+        if (exp[0] === 'begin'){
+            const blockEnv = new TypeEnvironment({}, env)
+            return this._tcBlock(exp, blockEnv);
+        }
+
         console.trace()
         throw `Unknown type for expression ${exp}.`
+    }
+
+    /**
+     * checks a block
+     */
+    _tcBlock(block, env){
+        let result;
+
+        const [_tag, ...expressions] = block;
+
+        expressions.forEach(exp =>{
+            result = this.tc(exp, env)
+        })
+
+        return result;
     }
 
     /**

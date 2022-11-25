@@ -1,12 +1,16 @@
 const assert = require('assert');
+const evaParser = require('../parser/evaParser');
 
-function exec(eva, exp){
-    return eva.tc(exp);
+function exec(eva, exp) {
+    if (typeof exp === 'string'){
+        exp = evaParser.parse(`(begin ${exp})`);
+    }
+    return eva.tcGlobal(exp);
 }
 
-function test(eva, exp, expected){
+function test(eva, exp, expected) {
     const actual = exec(eva, exp)
-    try{
+    try {
         assert.strictEqual(actual.equals(expected), true)
     }
     catch (e) {
@@ -15,7 +19,13 @@ function test(eva, exp, expected){
     }
 }
 
+// does not work
+function testThrows(eva, exp) {
+    assert.throws(exec(eva, exp))
+}
+
 module.exports = {
     exec,
-    test
+    test,
+    testThrows
 };
