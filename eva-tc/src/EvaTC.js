@@ -17,15 +17,15 @@ class EvaTC {
     /**
      * Evaluates global code wrapping into a block (installs variables of implicit block into global)
      */
-    tcGlobal(exp){
+    tcGlobal(exp) {
         return this._tcBody(exp, this.global);
     }
 
     /**
      * Checks body (global or function)
      */
-    _tcBody(body, env){
-        if (body[0] === 'begin'){
+    _tcBody(body, env) {
+        if (body[0] === 'begin') {
             return this._tcBlock(body, env);
         }
         return this.tc(body, env);
@@ -53,10 +53,23 @@ class EvaTC {
             return Type.string;
         }
 
+        // ----------------------
+        // Boolean true | false
+        if (this._isBoolean(exp)) {
+            return Type.boolean;
+        }
+
         // -------------
         // Math operations
         if (this._isBinary(exp)) {
             return this._binary(exp, env)
+        }
+
+        // ------------
+        // Boolean binary:
+
+        if (this._isBooleanBinary(exp)) {
+            return this._booleanBinary(exp, env);
         }
 
         // Variable Declaration
@@ -92,7 +105,7 @@ class EvaTC {
 
         // variable update: (set x 10)
 
-        if (exp[0] === 'set'){
+        if (exp[0] === 'set') {
             const [_, ref, value] = exp;
 
             // the type of the new value should match tot he previous type when the variable was defined
@@ -104,24 +117,56 @@ class EvaTC {
         }
 
         // Block
-        if (exp[0] === 'begin'){
+        if (exp[0] === 'begin') {
             const blockEnv = new TypeEnvironment({}, env)
             return this._tcBlock(exp, blockEnv);
+        }
+
+
+        /**
+         * if-expression
+         * 
+         */
+        if (exp[0] === 'if') {
+            const [_tag, condition, consequent, alternate] = exp;
+
+            // Boolean condition:
+            const t1 = this.tc(condition, env);
+            this._expect(t1, Type.boolean, condition, exp);
+            
+            const t2 = this.tc(consequent, env);
+            const t3 = this.tc(alternate, env);
+
+            return this._expect(t3, t2, exp, exp)
+        }
+
+        /**
+         * while expression:
+         */
+        if (exp[0] === 'while'){
+            const [_tag, condition, body] = exp;
+
+            const t1 = this.tc(condition, env);
+            this._expect(t1, Type.boolean, condition, exp);
+
+            return this.tc(body, env);
         }
 
         console.trace()
         throw `Unknown type for expression ${exp}.`
     }
 
+
+
     /**
      * checks a block
      */
-    _tcBlock(block, env){
+    _tcBlock(block, env) {
         let result;
 
         const [_tag, ...expressions] = block;
 
-        expressions.forEach(exp =>{
+        expressions.forEach(exp => {
             result = this.tc(exp, env)
         })
 
@@ -142,6 +187,34 @@ class EvaTC {
         return new TypeEnvironment({
             'VERSION': Type.string,
         });
+    }
+
+    /**
+     * Whether the expression is boolean binary
+     */
+    _isBooleanBinary(exp) {
+        return (
+            exp[0] === '==' ||
+            exp[0] === '!=' ||
+            exp[0] === '>=' ||
+            exp[0] === '<=' ||
+            exp[0] === '>' ||
+            exp[0] === '<'
+        )
+    }
+
+    /**
+     * Boolean binary operators.
+     */
+    _booleanBinary(exp, env) {
+        this._checkArity(exp, 2);
+
+        const t1 = this.tc(exp[1], env);
+        const t2 = this.tc(exp[2], env);
+
+        this._expect(t2, t1, exp[2], exp);
+
+        return Type.boolean;
     }
 
     /**
@@ -210,6 +283,14 @@ class EvaTC {
      */
     _throw(actualType, expectedType, value, exp) {
         throw `\nExpected "${expectedType}" type for ${value} in ${exp}, but got "${actualType}" type.\n`
+    }
+
+
+    /**
+     * Whether the expression is a boolean
+     */
+    _isBoolean(exp) {
+        return typeof exp === 'boolean' || exp === 'true' || exp === 'false';
     }
 
     /**

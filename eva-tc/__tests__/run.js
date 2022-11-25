@@ -7,6 +7,8 @@ const tests = [
     require('./math.spec'),
     require('./variable.spec'),
     require('./block.spec'),
+    require('./if.spec'),
+    require('./while.spec'),
 ]
 
 tests.forEach(test =>{
