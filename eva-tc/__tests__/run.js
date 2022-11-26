@@ -9,6 +9,7 @@ const tests = [
     require('./block.spec'),
     require('./if.spec'),
     require('./while.spec'),
+    require('./user_defined_functions.spec'),
 ]
 
 tests.forEach(test =>{

@@ -133,7 +133,7 @@ class EvaTC {
             // Boolean condition:
             const t1 = this.tc(condition, env);
             this._expect(t1, Type.boolean, condition, exp);
-            
+
             const t2 = this.tc(consequent, env);
             const t3 = this.tc(alternate, env);
 
@@ -143,7 +143,7 @@ class EvaTC {
         /**
          * while expression:
          */
-        if (exp[0] === 'while'){
+        if (exp[0] === 'while') {
             const [_tag, condition, body] = exp;
 
             const t1 = this.tc(condition, env);
@@ -152,8 +152,52 @@ class EvaTC {
             return this.tc(body, env);
         }
 
+        // ----------------------------
+        // Function declaration: (def square (x number) -> number (* x x))
+        if (exp[0] === 'def') {
+            const [_tag, name, params, _retDel, returnTypeStr, body] = exp;
+            return env.define(
+                name,
+                this._tcFunction(params, returnTypeStr, body, env
+                ));
+        }
+
         console.trace()
         throw `Unknown type for expression ${exp}.`
+    }
+
+    /**
+     * checks a function body.
+     */
+    _tcFunction(params, returnTypeStr, body, env) {
+        const returnType = Type.fromString(returnTypeStr);
+
+        // Parameters environment and types:
+        const paramsRecord = {};
+        const paramTypes = [];
+
+        params.forEach(([name, typeStr]) => {
+            const paramType = Type.fromString(typeStr);
+            paramsRecord[name] = paramType;
+            paramTypes.push(paramType);
+        })
+
+        const fnEnv = new TypeEnvironment(paramsRecord, env);
+
+        // check the body in the extended environment:
+        const actualReturnType = this._tcBody(body, fnEnv);
+
+        // check return type:
+        if (!returnType.equals(actualReturnType)) {
+            throw `Expected function ${body} to return ${returnType}, but got ${actualReturnType} instead`;
+        }
+
+        // Function type records its parameters and return type,
+        // so we can use them to validate function calls.
+        return new Type.Function({
+            paramTypes,
+            returnType
+        });
     }
 
 
