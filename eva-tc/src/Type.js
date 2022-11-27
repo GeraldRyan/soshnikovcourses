@@ -91,6 +91,8 @@ Type.Function = class extends Type {
                 name.push('<', params.join(','), '>');
             }
             name.push('>');
+            // this.name = name;
+            // return name; // i assume one of these are necessary but dmitry didn't have them.  
         }
         return this.name;
     }
@@ -114,7 +116,6 @@ Type.Function = class extends Type {
         if (!this.returnType.equals(other.returnType)){
             return false;
         }
-
         return true;
     }
 

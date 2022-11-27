@@ -1,4 +1,3 @@
-const { env } = require('process');
 const Type = require('./Type')
 const TypeEnvironment = require('./TypeEnvironment');
 
@@ -156,21 +155,39 @@ class EvaTC {
         // Function declaration: (def square (x number) -> number (* x x))
         if (exp[0] === 'def') {
             const [_tag, name, params, _retDel, returnTypeStr, body] = exp;
-            return env.define(
+
+            /** We have to extend environment with the function name before evaluating the body
+             * -- this is needed to support recursive function calls. 
+             */
+
+            let paramTypes = params.map(([_name, typeStr]) => {
+                return Type.fromString(typeStr);
+            })
+
+            // predefine from signature:
+
+            env.define(
                 name,
-                this._tcFunction(params, returnTypeStr, body, env
-                ));
+                new Type.Function({
+                    paramTypes,
+                    returnType: Type.fromString(returnTypeStr)
+                })
+            )
+
+            // actually validate the body
+
+            return this._tcFunction(params, returnTypeStr, body, env);
         }
 
         // Function calls 
         // (square 2)
-        if (Array.isArray(exp)){
+        if (Array.isArray(exp)) {
             const fn = this.tc(exp[0], env);
             const argValues = exp.slice(1);
 
             // passed arguments:
             const argTypes = argValues.map(arg => this.tc(arg, env));
-            
+
             return this._checkFunctionCall(fn, argTypes, env, exp);
         }
 
@@ -181,19 +198,19 @@ class EvaTC {
     /**
      * Checks function call
      */
-     _checkFunctionCall(fn, argTypes, env, exp){
+    _checkFunctionCall(fn, argTypes, env, exp) {
         // check arity
-        if (fn.paramTypes.length !== argTypes.length){
+        if (fn.paramTypes.length !== argTypes.length) {
             throw `\nFunction ${exp[0]} ${fn.getName()} expects ${fn.paramTypes.length} arguments, ${argTypes.length} given in ${exp}.\n`;
         }
 
         // check if argument types match the parameter types
-        argTypes.forEach((argType, index) =>{
+        argTypes.forEach((argType, index) => {
             this._expect(argType, fn.paramTypes[index], argTypes[index], exp);
         })
 
         return fn.returnType;
-     }
+    }
 
     /**
      * checks a function body.
