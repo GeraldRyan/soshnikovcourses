@@ -1,18 +1,36 @@
 const Type = require('../src/Type');
 const { test, exec, testThrows } = require('./test_util');
 
-module.exports = eva =>{
+module.exports = eva => {
     test(eva,
         `
-        (def square ((x number)) -> number 
+        (def sqr ((x number)) -> number 
+        (* x x))
+        `,
+        Type.fromString('Fn<number<number>>')
+    );
+    test(eva,
+        `
+        (def sqr ((x number)) -> number 
         (* x x))
 
-        // (square 2)
+        (square 2)
 
+        `, Type.number
+    );
+
+    test(eva,
+        `
+        (def calc((x number) (y number)) -> number
+            (begin
+                (var z 30)
+                (+ (* x y) z)    
+            )
+        )
         `,
-        Type.fromString('Fn<number<number>>'));
-
-    test(eva, 
+        Type.fromString('Fn<number<number,number>>')
+    );
+    test(eva,
         `
         (def calc((x number) (y number)) -> number
             (begin
@@ -21,6 +39,8 @@ module.exports = eva =>{
             )
         )
 
-        // (calc 10 20)
-        `, Type.fromString('Fn<number<number,number>>'));
+        (calc 10 20)
+        `,
+        Type.number
+    );
 }

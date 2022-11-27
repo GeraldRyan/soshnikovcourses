@@ -10,6 +10,7 @@ const tests = [
     require('./if.spec'),
     require('./while.spec'),
     require('./user_defined_functions.spec'),
+    require('./built_in_function.spec'),
 ]
 
 tests.forEach(test =>{

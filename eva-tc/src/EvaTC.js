@@ -162,9 +162,38 @@ class EvaTC {
                 ));
         }
 
+        // Function calls 
+        // (square 2)
+        if (Array.isArray(exp)){
+            const fn = this.tc(exp[0], env);
+            const argValues = exp.slice(1);
+
+            // passed arguments:
+            const argTypes = argValues.map(arg => this.tc(arg, env));
+            
+            return this._checkFunctionCall(fn, argTypes, env, exp);
+        }
+
         console.trace()
         throw `Unknown type for expression ${exp}.`
     }
+
+    /**
+     * Checks function call
+     */
+     _checkFunctionCall(fn, argTypes, env, exp){
+        // check arity
+        if (fn.paramTypes.length !== argTypes.length){
+            throw `\nFunction ${exp[0]} ${fn.getName()} expects ${fn.paramTypes.length} arguments, ${argTypes.length} given in ${exp}.\n`;
+        }
+
+        // check if argument types match the parameter types
+        argTypes.forEach((argType, index) =>{
+            this._expect(argType, fn.paramTypes[index], argTypes[index], exp);
+        })
+
+        return fn.returnType;
+     }
 
     /**
      * checks a function body.
@@ -230,6 +259,8 @@ class EvaTC {
     _createGlobal() {
         return new TypeEnvironment({
             'VERSION': Type.string,
+            sum: Type.fromString('Fn<number<number,number>>'),
+            square: Type.fromString('Fn<number<number>>')
         });
     }
 
