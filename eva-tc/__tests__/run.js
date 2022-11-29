@@ -11,6 +11,7 @@ const tests = [
     require('./while.spec'),
     require('./user_defined_functions.spec'),
     require('./built_in_function.spec'),
+    require('./lambda_functions.spec'),
 ]
 
 tests.forEach(test =>{

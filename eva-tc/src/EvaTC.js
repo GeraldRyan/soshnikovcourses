@@ -153,8 +153,15 @@ class EvaTC {
 
         // ----------------------------
         // Function declaration: (def square (x number) -> number (* x x))
+
+        // syntactic sugar for: (var square (lambda ((x number)) -> number (* x x)))
+
         if (exp[0] === 'def') {
-            const [_tag, name, params, _retDel, returnTypeStr, body] = exp;
+            let [_tag, name, params, _retDel, returnTypeStr, body] = exp;
+            const varExp = this._transformDefToVarLambda(exp);
+            name = exp[1];
+            params = exp[2];
+            returnTypeStr = exp[4];
 
             /** We have to extend environment with the function name before evaluating the body
              * -- this is needed to support recursive function calls. 
@@ -176,8 +183,18 @@ class EvaTC {
 
             // actually validate the body
 
-            return this._tcFunction(params, returnTypeStr, body, env);
+            // return this._tcFunction(params, returnTypeStr, body, env); // old way
+            return this._tcBlock(varExp, env);
         }
+
+        // Lambda function (lambda ((x number)) -> number (* x x))
+
+        if (exp[0] === 'lambda'){
+            const [_tag, params, _retDel, returnTypeStr, body] = exp;
+            return this._tcFunction(params, returnTypeStr, body, env);
+
+        }
+
 
         // Function calls 
         // (square 2)
@@ -194,6 +211,14 @@ class EvaTC {
         console.trace()
         throw `Unknown type for expression ${exp}.`
     }
+
+    /**
+     * _transformDefToVarLambda
+     */
+     _transformDefToVarLambda(exp){
+        const [_tag, name, params, _retDel, returnTypeStr, body] = exp;
+        return ['var', name, ['lambda', params, _retDel, returnTypeStr, body]];
+     }
 
     /**
      * Checks function call
