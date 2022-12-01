@@ -2,21 +2,29 @@ const PENDING = 0
 const FULFILLED = 1
 const FAILED = 2
 
-class CustomPromise{
+function CustomPromise(executor) {
 
-    constructor(resolve, reject){
-        // Promise implementor decides when
-        // Promise instantiator decides what
-        this.state = PENDING
-        this.handlers = []
-        this.errHandlers = []
-        this.value = ''
+
+    // Promise implementor decides when
+    // Promise instantiator decides what
+    let state = PENDING;
+    let handlers = [];
+    let errHandlers = [];
+    let value = null;
+
+
+    function resolve(result){
+        if (state !== PENDING) return;
+    
+        state = FULFILLED;
+        value = result;
+        handlers.forEach(h => h(value));
     }
 
 
 
-    then(cb){
-        if (this.state = FULFILLED){
+    function then(cb) {
+        if (this.state = FULFILLED) {
             cb(this.value)
             return
         }
@@ -25,8 +33,8 @@ class CustomPromise{
         }
     }
 
-    catch(cb){
-        if (this.state = FAILED){
+    function catcher(cb) {
+        if (this.state = FAILED) {
             cb(this.value)
             return
         }

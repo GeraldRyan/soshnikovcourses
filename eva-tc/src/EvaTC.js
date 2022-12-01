@@ -53,9 +53,27 @@ class EvaTC {
         }
 
         // ----------------------
-        // Boolean true | false
+        // Boolean binary true | false
         if (this._isBoolean(exp)) {
             return Type.boolean;
+        }
+
+        // ----------------------
+        // Type declaration/alias: (type <name> <base>)
+        if (exp[0] === 'type'){
+            const [_tag, name, base] = exp;
+            // Type alias
+            if (Type.hasOwnProperty(name)){
+                throw `Type ${name} is already defined: ${Type[name]}`;
+            }
+            if (!Type.hasOwnProperty(base)){
+                throw `Type ${base} is not defined`;
+            }
+
+            return (Type[name] = new Type.Alias({
+                name,
+                parent: Type[base]
+            }))
         }
 
         // -------------
@@ -69,6 +87,28 @@ class EvaTC {
 
         if (this._isBooleanBinary(exp)) {
             return this._booleanBinary(exp, env);
+        }
+
+        //-------
+        // class declaration: (class <Name> <Super> <Body>)
+        if (exp[0] === 'class'){
+            const [_tag, name, superClassName, body] = exp;
+
+            // resolve super:
+            const superClass = Type[superClassName];
+
+            // New class (type):
+            const classType = new Type.Class({name, superClass})
+
+            // Class is accessible by name.
+            Type[name] = env.define(name, classType);
+
+            // Body is evaluated in the class environment.
+
+            this._tcBody(body, classType.env);
+
+            return classType;
+
         }
 
         // Variable Declaration

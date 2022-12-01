@@ -12,6 +12,8 @@ const tests = [
     require('./user_defined_functions.spec'),
     require('./built_in_function.spec'),
     require('./lambda_functions.spec'),
+    require('./alias.spec'),
+    require('./class.spec'),
 ]
 
 tests.forEach(test =>{

@@ -1,3 +1,5 @@
+const TypeEnvironment = require("./TypeEnvironment");
+
 /**
  * Type class
  */
@@ -25,6 +27,9 @@ class Type {
      * Equals.
      */
     equals(other) {
+        if (other instanceof Type.Alias){
+            return other.equals(this)
+        }
         return this.name === other.name;
     }
 
@@ -59,6 +64,11 @@ Type.string = new Type('string')
  * Boolean Type
  */
 Type.boolean = new Type('boolean');
+
+/**
+ * Null Type
+ */
+Type.null = new Type('null');
 
 /**
  * Function meta type
@@ -156,6 +166,69 @@ Type.Function = class extends Type {
             }))
         }
         throw `Type.Function.fromString: Unknown type: ${typeStr}.`;
+    }
+}
+
+/**
+ * Type alias: (type int number)
+ */
+Type.Alias = class extends Type {
+    constructor({name, parent}){
+        super(name);
+        this.parent = parent;
+    }
+
+    /**
+     * Equals
+     */
+    equals(other){
+        if (this.name === other.name){
+            return true;
+        }
+        return this.parent.equals(other);
+    }
+
+}
+
+
+
+/**
+ * Class type: (class ...)
+ * 
+ * Creates a new TypeEnvironment
+ */
+Type.Class = class extends Type{
+    constructor({name, superClass = null}){
+        super(name);
+        this.superClass = superClass;
+        this.env = new TypeEnvironment({}, superClass != Type.null ? superClass.env : null);
+    }
+
+    /**
+     * Returns field type
+     */
+    getField(name){
+        return this.env.lookup(name);
+    }
+
+    /**
+     * Equals
+     */
+    equals(other){
+        if (this === other){
+            return true;
+        }
+
+        // Aliases:
+        if (other instanceof Type.Alias){
+            return other.equals(this);
+        }
+
+        // Super class:
+        if (this.superClass != Type.null){
+            return this.superClass.equals(other);
+        }
+
     }
 }
 
