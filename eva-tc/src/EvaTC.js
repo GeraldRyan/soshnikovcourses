@@ -60,13 +60,13 @@ class EvaTC {
 
         // ----------------------
         // Type declaration/alias: (type <name> <base>)
-        if (exp[0] === 'type'){
+        if (exp[0] === 'type') {
             const [_tag, name, base] = exp;
             // Type alias
-            if (Type.hasOwnProperty(name)){
+            if (Type.hasOwnProperty(name)) {
                 throw `Type ${name} is already defined: ${Type[name]}`;
             }
-            if (!Type.hasOwnProperty(base)){
+            if (!Type.hasOwnProperty(base)) {
                 throw `Type ${base} is not defined`;
             }
 
@@ -91,14 +91,14 @@ class EvaTC {
 
         //-------
         // class declaration: (class <Name> <Super> <Body>)
-        if (exp[0] === 'class'){
+        if (exp[0] === 'class') {
             const [_tag, name, superClassName, body] = exp;
 
             // resolve super:
             const superClass = Type[superClassName];
 
             // New class (type):
-            const classType = new Type.Class({name, superClass})
+            const classType = new Type.Class({ name, superClass })
 
             // Class is accessible by name.
             Type[name] = env.define(name, classType);
@@ -108,7 +108,37 @@ class EvaTC {
             this._tcBody(body, classType.env);
 
             return classType;
+        }
 
+        // ---------------------
+        // Class instantiation: (new <Class> <Arguments>...)
+
+        if (exp[0] === 'new') {
+            const [_tag, className, ...argValues] = exp;
+
+            const classType = Type[className];
+
+            if (classType == null) {
+                throw `Unknown class ${name}`;
+            }
+
+            const argTypes = argValues.map(arg => this.tc(arg, env));
+
+            return this._checkFunctionCall(classType.getField('constructor'),
+                [classType, ...argTypes],
+                env,
+                exp
+            );
+        }
+
+        // -------------------------
+        // Property access: (prop <instance> <name>)
+        if (exp[0] == 'prop') {
+            const [_tag, instance, name] = exp;
+
+            const instanceType = this.tc(instance, env);
+
+            return instanceType.getField(name);
         }
 
         // Variable Declaration
@@ -146,6 +176,16 @@ class EvaTC {
 
         if (exp[0] === 'set') {
             const [_, ref, value] = exp;
+
+            if (ref[0] == 'prop'){
+                const [_tag, instance, propName] = ref;
+                const instanceType = this.tc(instance, env);
+
+                const valueType = this.tc(value, env);
+                const propType = instanceType.getField(propName);
+
+                return this._expect(valueType, propType, value, exp);
+            }
 
             // the type of the new value should match tot he previous type when the variable was defined
             const valueType = this.tc(value, env);
@@ -229,7 +269,7 @@ class EvaTC {
 
         // Lambda function (lambda ((x number)) -> number (* x x))
 
-        if (exp[0] === 'lambda'){
+        if (exp[0] === 'lambda') {
             const [_tag, params, _retDel, returnTypeStr, body] = exp;
             return this._tcFunction(params, returnTypeStr, body, env);
 
@@ -255,10 +295,10 @@ class EvaTC {
     /**
      * _transformDefToVarLambda
      */
-     _transformDefToVarLambda(exp){
+    _transformDefToVarLambda(exp) {
         const [_tag, name, params, _retDel, returnTypeStr, body] = exp;
         return ['var', name, ['lambda', params, _retDel, returnTypeStr, body]];
-     }
+    }
 
     /**
      * Checks function call
