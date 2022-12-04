@@ -131,6 +131,21 @@ class EvaTC {
             );
         }
 
+        // -----------------------
+        // Super expressions: (super <ClassName>)
+
+        if (exp[0] === 'super') {
+            const [_tag, className] = exp;
+
+            const classType = Type[className];
+
+            if (classType == null) {
+                throw `Unknown class ${className}`
+            }
+
+            return classType.superClass;
+        }
+
         // -------------------------
         // Property access: (prop <instance> <name>)
         if (exp[0] == 'prop') {
@@ -177,7 +192,7 @@ class EvaTC {
         if (exp[0] === 'set') {
             const [_, ref, value] = exp;
 
-            if (ref[0] == 'prop'){
+            if (ref[0] == 'prop') {
                 const [_tag, instance, propName] = ref;
                 const instanceType = this.tc(instance, env);
 
