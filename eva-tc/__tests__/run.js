@@ -14,6 +14,7 @@ const tests = [
     require('./lambda_functions.spec'),
     require('./alias.spec'),
     require('./class.spec'),
+    require('./union.spec'),
 ]
 
 tests.forEach(test =>{

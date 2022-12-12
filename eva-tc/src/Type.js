@@ -30,6 +30,11 @@ class Type {
         if (other instanceof Type.Alias){
             return other.equals(this)
         }
+
+        if (other instanceof Type.Union){
+            return other.equals(this)
+        }
+
         return this.name === other.name;
     }
 
@@ -69,6 +74,11 @@ Type.boolean = new Type('boolean');
  * Null Type
  */
 Type.null = new Type('null');
+
+/**
+ * Any type.
+ */
+Type.any = new Type('any');
 
 /**
  * Function meta type
@@ -233,3 +243,51 @@ Type.Class = class extends Type{
 }
 
 module.exports = Type
+
+/**
+ * Union type: (or string number)
+ */
+Type.Union = class extends Type{
+    constructor ({name, optionTypes}){
+        super(name);
+        this.optionTypes = optionTypes;
+    }
+
+    /**
+     * Whether this union includes all types.
+     */
+    includesAll(types){
+        if (types.length !== this.optionTypes.length){
+            return false;
+        }
+
+        for (const type_ of types){
+            if (!this.equals(type_)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Equals
+     */
+    equals(other){
+        if (this === other){
+            return true;
+        }
+
+        // Aliases: 
+        if (other instanceof Type.Alias){
+            return other.equals(this);
+        }
+
+        // other union:
+        if (other instanceof Type.Union){
+            return this.includesAll(other.optionTypes)
+        }
+
+        // Anything else
+        return this.optionTypes.some(t=>t.equals(other));
+    }
+}

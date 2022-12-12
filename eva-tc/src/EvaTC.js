@@ -1,3 +1,4 @@
+const { type } = require('os');
 const Type = require('./Type')
 const TypeEnvironment = require('./TypeEnvironment');
 
@@ -61,7 +62,17 @@ class EvaTC {
         // ----------------------
         // Type declaration/alias: (type <name> <base>)
         if (exp[0] === 'type') {
+
             const [_tag, name, base] = exp;
+
+            // Union type: (or number string)
+
+            if (base[0] === 'or') {
+                const options = base.slice(1);
+                const optionTypes = options.map(option => Type.fromString(option));
+                return (Type[name] = new Type.Union({ name, optionTypes }));
+            }
+
             // Type alias
             if (Type.hasOwnProperty(name)) {
                 throw `Type ${name} is already defined: ${Type[name]}`;
@@ -228,7 +239,23 @@ class EvaTC {
             const t1 = this.tc(condition, env);
             this._expect(t1, Type.boolean, condition, exp);
 
-            const t2 = this.tc(consequent, env);
+            // Initially, environment used to tc consequent part is the same as the main env
+            // However, can be updated for the union type with type casting. 
+            let consequentEnv = env;
+
+            // Check if the cond is a type casting rule. This is used with union types to make a type concrete:
+            // (if (== (typeof foo) "string") ...)
+            if (this._isTypeCastCondition(condition)){
+                const [name, specificType] = this._getSpecifiedType(condition);
+                // update env with the concrete type for this name:
+                consequentEnv = new TypeEnvironment(
+                    {[name]: Type.fromString(specificType)},
+                    env,
+                );
+            }
+
+
+            const t2 = this.tc(consequent, consequentEnv);
             const t3 = this.tc(alternate, env);
 
             return this._expect(t3, t2, exp, exp)
@@ -316,6 +343,32 @@ class EvaTC {
     }
 
     /**
+     * Whether the if-condition is type casting/specification
+     * 
+     * This is used with union types to make a type concrete:
+     * 
+     * (if (== typeof foo) "string" ...)
+     */
+    _isTypeCastCondition(condition){
+        const [op, lhs] = condition;
+        return op === '==' && lhs[0] === 'typeof'
+    }
+
+    /**
+     * Returns specific type after casting.
+     * 
+     * This is used with union types to make a type concrete:
+     * 
+     * (if (== typeof foo) "string" ...)
+     */
+    _getSpecifiedType(condition){
+        const [_op, [_typeof, name], specificType ] = condition;
+
+        // return name and the new type (stripping quotes).
+        return [name, specificType.slice(1, -1)];
+    }
+
+    /**
      * Checks function call
      */
     _checkFunctionCall(fn, argTypes, env, exp) {
@@ -326,6 +379,9 @@ class EvaTC {
 
         // check if argument types match the parameter types
         argTypes.forEach((argType, index) => {
+            if (fn.paramTypes[index] === Type.any){
+                return;
+            }
             this._expect(argType, fn.paramTypes[index], argTypes[index], exp);
         })
 
@@ -397,7 +453,8 @@ class EvaTC {
         return new TypeEnvironment({
             'VERSION': Type.string,
             sum: Type.fromString('Fn<number<number,number>>'),
-            square: Type.fromString('Fn<number<number>>')
+            square: Type.fromString('Fn<number<number>>'),
+            typeof: Type.fromString('Fn<string<any>>')
         });
     }
 
@@ -475,9 +532,22 @@ class EvaTC {
      * Throw if operator type doesn't expect the operand;
      */
     _expectOperatorType(type_, allowedTypes, exp) {
-        if (!allowedTypes.some(t => t.equals(type_))) {
-            throw `\nUnexpected type: ${type_} in ${exp}, allowed: ${allowedTypes}`;
+        // For union type, _all_ sub-types should support this operation:
+        if (type_ instanceof Type.Union) {
+            if (type_.includesAll(allowedTypes)) {
+                return;
+            }
         }
+
+        // other types: 
+
+        else {
+            if (allowedTypes.some(t => t.equals(type_))) {
+                return;
+            }
+        }
+
+        throw `\nUnexpected type: ${type_} in ${exp}, allowed: ${allowedTypes}`;
     }
 
     /**
