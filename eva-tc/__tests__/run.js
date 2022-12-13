@@ -15,6 +15,7 @@ const tests = [
     require('./alias.spec'),
     require('./class.spec'),
     require('./union.spec'),
+    require('./generics.spec'),
 ]
 
 tests.forEach(test =>{

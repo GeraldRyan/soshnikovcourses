@@ -245,11 +245,11 @@ class EvaTC {
 
             // Check if the cond is a type casting rule. This is used with union types to make a type concrete:
             // (if (== (typeof foo) "string") ...)
-            if (this._isTypeCastCondition(condition)){
+            if (this._isTypeCastCondition(condition)) {
                 const [name, specificType] = this._getSpecifiedType(condition);
                 // update env with the concrete type for this name:
                 consequentEnv = new TypeEnvironment(
-                    {[name]: Type.fromString(specificType)},
+                    { [name]: Type.fromString(specificType) },
                     env,
                 );
             }
@@ -279,46 +279,59 @@ class EvaTC {
         // syntactic sugar for: (var square (lambda ((x number)) -> number (* x x)))
 
         if (exp[0] === 'def') {
+
             let [_tag, name, params, _retDel, returnTypeStr, body] = exp;
             const varExp = this._transformDefToVarLambda(exp);
-            name = exp[1];
-            params = exp[2];
-            returnTypeStr = exp[4];
 
-            /** We have to extend environment with the function name before evaluating the body
-             * -- this is needed to support recursive function calls. 
-             */
+            if (!this._isGenericDefFunction(exp)) {
 
-            let paramTypes = params.map(([_name, typeStr]) => {
-                return Type.fromString(typeStr);
-            })
+                name = exp[1];
+                params = exp[2];
+                returnTypeStr = exp[4];
 
-            // predefine from signature:
+                /** We have to extend environment with the function name before evaluating the body
+                 * -- this is needed to support recursive function calls. 
+                 */
 
-            env.define(
-                name,
-                new Type.Function({
-                    paramTypes,
-                    returnType: Type.fromString(returnTypeStr)
+                let paramTypes = params.map(([_name, typeStr]) => {
+                    return Type.fromString(typeStr);
                 })
-            )
 
-            // actually validate the body
+                // predefine from signature (supports recursion):
 
-            // return this._tcFunction(params, returnTypeStr, body, env); // old way
-            return this._tcBlock(varExp, env);
+                env.define(
+                    name,
+                    new Type.Function({
+                        paramTypes,
+                        returnType: Type.fromString(returnTypeStr)
+                    })
+                )
+            }
+
+            // old way
+            // return this._tcFunction(params, returnTypeStr, body, env); 
+
+
+            // new way - delegate to lambda
+            // return this._tcBlock(varExp, env); // must have missed him change this
+            return this.tc(varExp, env);
         }
 
         // Lambda function (lambda ((x number)) -> number (* x x))
 
         if (exp[0] === 'lambda') {
-            const [_tag, params, _retDel, returnTypeStr, body] = exp;
-            return this._tcFunction(params, returnTypeStr, body, env);
+            // 1. Generic Functions
+            if (this._isGenericLambdaFunction(exp)) {
+                return this._createGenericFunctionType(exp, env);
+            }
 
+            // 2. simple functions
+            return this._createSimpleFunctionType(exp, env)
         }
 
-
+        // --------------------------------
         // Function calls 
+        //
         // (square 2)
         if (Array.isArray(exp)) {
             const fn = this.tc(exp[0], env);
@@ -330,14 +343,70 @@ class EvaTC {
             return this._checkFunctionCall(fn, argTypes, env, exp);
         }
 
+
         console.trace()
         throw `Unknown type for expression ${exp}.`
+    }
+
+
+    /**
+     * simple function declarations (no generic parameters).
+     * 
+     * Such functions are type-checked during declaration time.
+     */
+    _createSimpleFunctionType(exp, env) {
+        const [_tag, params, _retDel, returnTypeStr, body] = exp;
+        return this._tcFunction(params, returnTypeStr, body, env);
+    }
+
+    /**
+     * Generic function declarations
+     * 
+     * Such functions are not checked at declaration,
+     * instead they are checked at call time, when all generic parameters are bound. 
+     */
+    _createGenericFunctionType(exp, env) {
+        const [_tag, genericTypes, params, _retDel, returnType, body] = exp;
+        return new Type.GenericFunction({
+            genericTypeStr: genericTypes.slice(1, -1),
+            params,
+            body,
+            returnType,
+            env, // Closures
+        });
+    }
+
+    /**
+     * Whether the function is generic
+     * 
+     * (lambda <K> ((x K)) -> K (+ x x))
+     */
+    _isGenericLambdaFunction(exp){
+        return exp.length === 6 && /^<[^>]+>$/.test(exp[1]);
+    }
+
+    /**
+     * Whether the function is generic.
+     * 
+     * (def foo <K> ((x K)) -> K (+ x x))
+     */
+    _isGenericDefFunction(exp) {
+        return exp.length === 7 && /^<[^>]+>$/.test(exp[2]);
     }
 
     /**
      * _transformDefToVarLambda
      */
     _transformDefToVarLambda(exp) {
+
+        // 1. Generic functions
+
+        if (this._isGenericDefFunction(exp)) {
+            const [_tag, name, genericTypeStr, params, _retDel, returnTypeStr, body] = exp;
+            return ['var', name, ['lambda', genericTypeStr, params, _retDel, returnTypeStr, body]];
+        }
+
+        // 2. simple functions
         const [_tag, name, params, _retDel, returnTypeStr, body] = exp;
         return ['var', name, ['lambda', params, _retDel, returnTypeStr, body]];
     }
@@ -349,7 +418,7 @@ class EvaTC {
      * 
      * (if (== typeof foo) "string" ...)
      */
-    _isTypeCastCondition(condition){
+    _isTypeCastCondition(condition) {
         const [op, lhs] = condition;
         return op === '==' && lhs[0] === 'typeof'
     }
@@ -361,8 +430,8 @@ class EvaTC {
      * 
      * (if (== typeof foo) "string" ...)
      */
-    _getSpecifiedType(condition){
-        const [_op, [_typeof, name], specificType ] = condition;
+    _getSpecifiedType(condition) {
+        const [_op, [_typeof, name], specificType] = condition;
 
         // return name and the new type (stripping quotes).
         return [name, specificType.slice(1, -1)];
@@ -379,7 +448,7 @@ class EvaTC {
 
         // check if argument types match the parameter types
         argTypes.forEach((argType, index) => {
-            if (fn.paramTypes[index] === Type.any){
+            if (fn.paramTypes[index] === Type.any) {
                 return;
             }
             this._expect(argType, fn.paramTypes[index], argTypes[index], exp);

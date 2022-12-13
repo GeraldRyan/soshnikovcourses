@@ -290,4 +290,21 @@ Type.Union = class extends Type{
         // Anything else
         return this.optionTypes.some(t=>t.equals(other));
     }
-}
+};
+
+/**
+ * Generic function type.
+ * 
+ * Generic functions create normal function types when a function is called
+ */
+Type.GenericFunction = class extends Type {
+    constructor({name = null, genericTypeStr, params, returnType, body, env}){
+        super(`${name || 'lambda'} <${genericTypeStr}>`);
+        this.genericTypes = genericTypeStr.split(',');
+        this.params = params;
+        this.returnType = returnType;
+        this.body = body;
+        this.env = env;
+    }
+};
+
