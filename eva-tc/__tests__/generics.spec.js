@@ -14,21 +14,21 @@ module.exports = eva =>{
     `);
 
     // call a generic (explicit polymorphism)
-    // test(eva,
-    // `
-    //     (combine <number> 2 3)
+    test(eva,
+    `
+        (combine <number> 2 3)
 
-    // `, Type.number)
+    `, Type.number)
 
-    // test(eva,
-    // `
-    //     (combine <string> "hello, ", "world!")
+    test(eva,
+    `
+        (combine <string> "hello, " "world!")
 
-    // `, Type.String)
+    `, Type.string)
 
-    // test(eva,
-    // `
-    //     ((lambda <K> ((x K)) -> K (+ x x)) <number> 2)
+    test(eva,
+    `
+        ((lambda <K> ((x K)) -> K (+ x x)) <number> 2)
 
-    // `, Type.number)
+    `, Type.number)
 };

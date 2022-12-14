@@ -34,7 +34,6 @@ class Type {
         if (other instanceof Type.Union){
             return other.equals(this)
         }
-
         return this.name === other.name;
     }
 

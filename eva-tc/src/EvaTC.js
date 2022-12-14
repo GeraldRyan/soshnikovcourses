@@ -335,17 +335,114 @@ class EvaTC {
         // (square 2)
         if (Array.isArray(exp)) {
             const fn = this.tc(exp[0], env);
-            const argValues = exp.slice(1);
+            
+            
+            // simple function call:
+            let actualFn = fn
+            let argValues = exp.slice(1);
+
+            // generic function calls:
+            if (fn instanceof Type.GenericFunction){
+                // Actual (instantiated) types:
+                const actualTypes = this._extractActualCallTypes(exp);
+                // console.log('fn', fn)
+                // map the generic types to the actual types:
+                const genericTypesMap = this._getGenericTypesMap(
+                    fn.genericTypes,
+                    actualTypes
+                )
+
+                // Bind parameters and return types:
+                const [boundParams, boundReturnType] = this._bindFunctionTypes(
+                    fn.params,
+                    fn.returnType,
+                    genericTypesMap
+                );
+
+                /**
+                 * check function body with the bound paramater types:
+                 * This creates an actual function type.
+                 * 
+                 * Notice: We pass environment a fn.env, i.e. closured env
+                 * TODO: Pre-install to Type combine_number, combine_string etc
+                 */
+                actualFn = this._tcFunction(
+                    boundParams,
+                    boundReturnType,
+                    fn.body,
+                    fn.env // closure! 
+                );
+
+                // in generic function calls parameters are passed from index 2
+                argValues = exp.slice(2);
+            }
 
             // passed arguments:
             const argTypes = argValues.map(arg => this.tc(arg, env));
 
-            return this._checkFunctionCall(fn, argTypes, env, exp);
+            return this._checkFunctionCall(actualFn, argTypes, env, exp);
         }
 
 
         console.trace()
         throw `Unknown type for expression ${exp}.`
+    }
+
+    /**
+     * Map generic parameter types to actual types. 
+     */
+    _getGenericTypesMap(genericTypes, actualType){
+        const boundTypes = new Map();
+        for (let i = 0; i < genericTypes.length; i++){
+            boundTypes.set(genericTypes[i], actualType[i])
+        }
+
+        return boundTypes;
+    }
+
+    /**
+     * Binds generic parameters and return type to actual types.
+     */
+    _bindFunctionTypes(params, returnType, genericTypesMap){
+        const actualParams = [];
+
+        // 1. Bind parameter types:
+        for (let i = 0; i < params.length; i++){
+            const [paramName, paramType] = params[i];
+            let actualParamType = paramType;
+
+            // Generic type -> rewrite to actual.
+            if (genericTypesMap.has(paramType)){
+                actualParamType = genericTypesMap.get(paramType);
+            }
+
+            actualParams.push([paramName, actualParamType]);
+        }
+
+        // 2. Bind return type:
+
+        let actualReturnType = returnType;
+
+        if (genericTypesMap.has(returnType)){
+            actualReturnType = genericTypesMap.get(returnType);
+        }
+
+        return [actualParams, actualReturnType];
+
+    }
+
+    /**
+     * Extracts types for generic paameter types.
+     * (combine <string> "hello")
+     */
+    _extractActualCallTypes(exp){
+        const data = /^<([^>]+)>$/.exec(exp[1]);
+
+        if (data == null){
+            throw `No actual types provided in generic call: ${exp}.`;
+        }
+        // console.log("data: ", data)
+        return data[1].split(',');
     }
 
 
