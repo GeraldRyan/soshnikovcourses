@@ -2,12 +2,13 @@
  Eva Virtual Machine
 */
 
-#ifndef __EvaVM_h
-#define __EvaVM -_HAS_CHAR16_T_LANGUAGE_SUPPORT
+#ifndef EvaVM_h
+#define EvaVM_h
 
 #include <string>
 #include <vector>
 #include "../bytecode/OpCode.h"
+#include "../Logger.h"
 
 /**  
  * Reads the current byte in the bytecode and advances the ip pointer.
@@ -33,11 +34,12 @@ public:
         // 2. compile program to Eva bytecode
         // code = compiler->compile(ast);
 
-        code = {0xff};
+        code = {OP_HALT};
+        
 
         // set instruction pointer to the beginning:
         ip = &code[0];
-
+        std::cout << ip;
         return eval();
     }
 
@@ -48,10 +50,14 @@ public:
     {
         for (;;)
         {
-            switch (READ_BYTE())
+            auto opcode = READ_BYTE();
+            log(opcode);
+            switch (opcode)
             {
             case OP_HALT:
                 return;
+            default: 
+                DIE << "unknown opcode: " << std::hex << opcode;
             }
         }
     }

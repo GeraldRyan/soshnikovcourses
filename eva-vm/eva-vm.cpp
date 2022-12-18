@@ -1,3 +1,4 @@
+#include <iostream>
 #include "src/vm/EvaVM.h"
 
 /**
@@ -9,6 +10,8 @@ int main(int argc, char const *argv[]){
     vm.exec(R"(
         42
     )");
+
+    std::cout << "Finished executing!\n";
 
     return 0;
 }
