@@ -12,7 +12,7 @@ int main(int argc, char const *argv[]){
         42
     )");
 
-    log(result.number);
+    log(AS_CPPSTRING(result));
 
     std::cout << "Finished executing!\n";
 
