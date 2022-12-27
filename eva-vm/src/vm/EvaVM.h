@@ -77,10 +77,11 @@ public:
         // 2. compile program to Eva bytecode
         // code = compiler->compile(ast);
 
-        constants.push_back(ALLOC_STRING("hello world"));
+        constants.push_back(ALLOC_STRING("hello, "));
+        constants.push_back(ALLOC_STRING("world"));
 
         // (- (* 10 3) 10)
-        code = {OP_CONST, 0, OP_HALT};
+        code = {OP_CONST, 0, OP_CONST, 1, OP_ADD, OP_HALT};
 
         // initialize SP and IP:
         ip = &code[0];
@@ -111,8 +112,25 @@ public:
 
             // Math
             case OP_ADD:
-                BINARY_OP(+);
+            {
+                auto op2 = pop();
+                auto op1 = pop();
+                // numeric addition
+                if (IS_NUMBER(op1) && IS_NUMBER(op2))
+                {
+                    auto v1 = AS_NUMBER(op1);
+                    auto v2 = AS_NUMBER(op2);
+                    push(NUMBER(v2 + v1));
+                }
+                // string concat
+                else if (IS_STRING(op1) && IS_STRING(op2))
+                {
+                    auto s1 = AS_CPPSTRING(op1);
+                    auto s2 = AS_CPPSTRING(op2);
+                    push(ALLOC_STRING(s1 + s2));
+                }
                 break;
+            }
             case OP_SUB:
                 BINARY_OP(-);
                 break;
