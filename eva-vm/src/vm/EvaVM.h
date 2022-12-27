@@ -12,32 +12,43 @@
 #include "../Logger.h"
 #include "EvaValue.h"
 
-
-/**  
+/**
  * Reads the current byte in the bytecode and advances the ip pointer.
-*/
+ */
 #define READ_BYTE() *ip++
 
-/**  
+/**
  * Stack top (stack overflow after exceeding).
-*/
+ */
 #define STACK_LIMIT 512
+
+/**
+ * Binary Operation
+ */
+#define BINARY_OP(op)                \
+    do                               \
+    {                                \
+        auto op2 = AS_NUMBER(pop()); \
+        auto op1 = AS_NUMBER(pop()); \
+        push(NUMBER(op1 op op2));    \
+    } while (false)
 
 /** Gets a constant from the pool*/
 #define GET_CONST() constants[READ_BYTE()]
 
-
 /**
  * Eva Virtual Machine.
-*/
+ */
 class EvaVM
 {
 public:
     EvaVM() {}
 
     /** Pushes a value onto the stack*/
-    void push(const EvaValue& value){
-        if ((size_t)(sp - stack.begin()) == STACK_LIMIT){
+    void push(const EvaValue &value)
+    {
+        if ((size_t)(sp - stack.begin()) == STACK_LIMIT)
+        {
             DIE << "push(): Stack overflow.\n";
         }
         *sp = value;
@@ -45,8 +56,10 @@ public:
     }
 
     /** Pops a value from the stack*/
-    EvaValue pop(){
-        if (stack.begin() == 0){
+    EvaValue pop()
+    {
+        if (stack.begin() == 0)
+        {
             DIE << "pop(): empty stack.\n";
         }
         sp--;
@@ -64,16 +77,18 @@ public:
         // 2. compile program to Eva bytecode
         // code = compiler->compile(ast);
 
-        constants.push_back(NUMBER(42));
+        constants.push_back(NUMBER(10));
+        constants.push_back(NUMBER(3));
+        constants.push_back(NUMBER(10));
 
-        code = {OP_CONST, 0, OP_HALT};
-        
-        // init the stack
+        // (- (* 10 3) 10)
+        code = {OP_CONST, 0, OP_CONST, 1, OP_MUL, OP_CONST, 2, OP_SUB, OP_HALT};
+
+        // initialize SP and IP:
+        ip = &code[0];
         sp = &stack[0];
 
-        // set instruction pointer to the beginning:
-        ip = &code[0];
-        std::cout << ip;
+        // std::cout << ip;
         return eval();
     }
 
@@ -96,7 +111,21 @@ public:
                 push(GET_CONST());
                 break;
 
-            default: 
+            // Math
+            case OP_ADD:
+                BINARY_OP(+);
+                break;
+            case OP_SUB:
+                BINARY_OP(-);
+                break;
+            case OP_MUL:
+                BINARY_OP(*);
+                break;
+            case OP_DIV:
+                BINARY_OP(/);
+                break;
+
+            default:
                 DIE << "unknown opcode: " << std::hex << opcode;
             }
         }
@@ -108,7 +137,7 @@ public:
     uint8_t *ip;
 
     /** Stack pointer*/
-    EvaValue* sp;
+    EvaValue *sp;
 
     /** Operands stack*/
     std::array<EvaValue, STACK_LIMIT> stack;
