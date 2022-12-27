@@ -68,6 +68,8 @@ public:
 
         code = {OP_CONST, 0, OP_HALT};
         
+        // init the stack
+        sp = &stack[0];
 
         // set instruction pointer to the beginning:
         ip = &code[0];
