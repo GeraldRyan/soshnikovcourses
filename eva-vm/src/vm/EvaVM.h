@@ -10,7 +10,10 @@
 #include <vector>
 #include "../bytecode/OpCode.h"
 #include "../Logger.h"
+#include "../parser/EvaParser.h"
 #include "EvaValue.h"
+
+using syntax::EvaParser;
 
 /**
  * Reads the current byte in the bytecode and advances the ip pointer.
@@ -42,7 +45,7 @@
 class EvaVM
 {
 public:
-    EvaVM() {}
+    EvaVM() : parser(std::make_unique<EvaParser>()) {}
 
     /** Pushes a value onto the stack*/
     void push(const EvaValue &value)
@@ -69,10 +72,11 @@ public:
     /*
     Executes a program
     */
-    EvaValue exec(const std::string &program)
+    EvaValue exec(const std::string& program)
     {
         // 1. Parse the program
-        // auto ast = parser->parse(program)
+        auto ast = parser->parse(program);
+        // log(ast.number);  // 10
 
         // 2. compile program to Eva bytecode
         // code = compiler->compile(ast);
@@ -146,6 +150,11 @@ public:
             }
         }
     }
+
+    /**
+     * Parser
+    */
+   std::unique_ptr<EvaParser> parser;
 
     /**
      * Instruction pointer (aka Program counter).
