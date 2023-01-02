@@ -12,6 +12,7 @@
 #include "../Logger.h"
 #include "../parser/EvaParser.h"
 #include "EvaValue.h"
+#include "../compiler/EvaCompiler.h"
 
 using syntax::EvaParser;
 
@@ -37,7 +38,7 @@ using syntax::EvaParser;
     } while (false)
 
 /** Gets a constant from the pool*/
-#define GET_CONST() constants[READ_BYTE()]
+#define GET_CONST() co->constants[READ_BYTE()]
 
 /**
  * Eva Virtual Machine.
@@ -45,7 +46,8 @@ using syntax::EvaParser;
 class EvaVM
 {
 public:
-    EvaVM() : parser(std::make_unique<EvaParser>()) {}
+    EvaVM() : parser(std::make_unique<EvaParser>()), 
+    compiler(std::make_unique<EvaCompiler>()) {}
 
     /** Pushes a value onto the stack*/
     void push(const EvaValue &value)
@@ -79,16 +81,16 @@ public:
         // log(ast.number);  // 10
 
         // 2. compile program to Eva bytecode
-        // code = compiler->compile(ast);
+        co = compiler->compile(ast);
 
-        constants.push_back(ALLOC_STRING("hello, "));
-        constants.push_back(ALLOC_STRING("world"));
+        // constants.push_back(ALLOC_STRING("hello, "));
+        // constants.push_back(ALLOC_STRING("world"));
 
-        // (- (* 10 3) 10)
-        code = {OP_CONST, 0, OP_CONST, 1, OP_ADD, OP_HALT};
+        // // (- (* 10 3) 10)
+        // code = {OP_CONST, 0, OP_CONST, 1, OP_ADD, OP_HALT};
 
         // initialize SP and IP:
-        ip = &code[0];
+        ip = &co->code[0];
         sp = &stack[0];
 
         // std::cout << ip;
@@ -157,6 +159,11 @@ public:
    std::unique_ptr<EvaParser> parser;
 
     /**
+     * Compiler
+    */
+   std::unique_ptr<EvaCompiler> compiler;
+
+    /**
      * Instruction pointer (aka Program counter).
      */
     uint8_t *ip;
@@ -168,14 +175,16 @@ public:
     std::array<EvaValue, STACK_LIMIT> stack;
 
     /**
+     * Code object.
+    */
+   CodeObject* co;
+
+    /**
     Constant pool
     */
     std::vector<EvaValue> constants;
 
-    /**
-     * Bytecode
-     */
-    std::vector<uint8_t> code;
+
 };
 
 #endif
