@@ -9,7 +9,7 @@ int main(int argc, char const *argv[]){
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        (+ "Hello" " WORLD")
+        (>= 5 6)
     )");
 
     log(result);

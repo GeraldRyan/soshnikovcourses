@@ -5,11 +5,15 @@
 #ifndef EvaCompiler_h
 #define EvaCompiler_h
 
+#include <map>
+#include <string>
 
+#include "../parser/EvaParser.h"
 #include "../vm/EvaValue.h"
 #include "../bytecode/OpCode.h"
 #include "../Logger.h"
-#include "../parser/EvaParser.h"
+
+
 
 /**
  * Allocates a new constant in the pool
@@ -94,7 +98,18 @@ public:
          * Symbols (variables, operators)
          */
         case ExpType::SYMBOL:
-            DIE << "ExpType::SYMBOL: unimplemented";
+            /**
+             * Boolean
+             */
+            if (exp.string == "true" || exp.string == "false")
+            {
+                emit(OP_CONST);
+                emit(booleanConstIdx(exp.string == "true" ? true : false));
+            }
+            else
+            {
+                // variables ; TODO
+            }
             break;
         /**
          * Lists
@@ -126,7 +141,17 @@ public:
                 {
                     GEN_BINARY_OP(OP_DIV);
                 }
+                // -----------------
+                // Compare operators (> 5 10):
+                else if (compareOps_.count(op) != 0)
+                {
+                    gen(exp.list[1]);
+                    gen(exp.list[2]);
+                    emit(OP_COMPARE);
+                    emit(compareOps_[op]);
+                }
             }
+
             break;
         }
     }
@@ -150,6 +175,14 @@ private:
         ALLOC_CONST(IS_STRING, AS_CPPSTRING, ALLOC_STRING, value);
         return co->constants.size() - 1;
     }
+    /**
+     * Allocates a string constant.
+     */
+    size_t booleanConstIdx(bool value)
+    {
+        ALLOC_CONST(IS_BOOLEAN, AS_BOOLEAN, BOOLEAN, value);
+        return co->constants.size() - 1;
+    }
 
     /**
      * Emis data to the bytecode.
@@ -160,6 +193,17 @@ private:
      * Compiling code object.
      */
     CodeObject *co;
+
+    /**
+     * Compare ops map
+     */
+    static std::map<std::string, uint8_t> compareOps_;
 };
+
+/**
+ * Compare ops map
+ */
+std::map<std::string, uint8_t> EvaCompiler::compareOps_ = {
+    {"<", 0}, {">", 1}, {"==", 2}, {">=", 3}, {"<=", 4}, {"!=", 5}};
 
 #endif
