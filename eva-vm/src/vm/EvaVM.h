@@ -23,6 +23,16 @@ using syntax::EvaParser;
 #define READ_BYTE() *ip++
 
 /**
+ * Reads a short word (2 bytes)
+*/
+#define READ_SHORT() (uint16_t)((ip +=2, (ip[-2] << 8) | ip[-1]))
+
+/**
+ * Converts bytecode index to a pointer
+*/
+#define TO_ADDRESS(index) (&co->code[index])
+
+/**
  * Stack top (stack overflow after exceeding).
  */
 #define STACK_LIMIT 512
@@ -197,6 +207,25 @@ public:
                     auto s2 = AS_STRING(op2);
                     COMPARE_VALUES(op, s1, s2);
                 }
+                break;
+            }
+
+            // ---------------------
+            // Conditional jump:
+
+            case OP_JMP_IF_FALSE:{
+                auto cond = AS_BOOLEAN(pop()); // TODO: TO_BOOLEAN (0 === false)
+                auto address = READ_SHORT();
+
+                if (!cond){
+                    ip = TO_ADDRESS(address);
+                }
+
+                break;
+            }
+
+            case OP_JMP: {
+                ip = TO_ADDRESS(READ_SHORT());
                 break;
             }
 

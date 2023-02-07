@@ -71,7 +71,7 @@ struct CodeObject : public Object
     std::string name;
 
     /**
-     * Constnat pool.
+     * Constant pool.
      */
     std::vector<EvaValue> constants;
 
