@@ -11,6 +11,7 @@
 #include "../parser/EvaParser.h"
 #include "../vm/EvaValue.h"
 #include "../bytecode/OpCode.h"
+#include "../disassembler/EvaDisassembler.h"
 #include "../Logger.h"
 
 
@@ -50,7 +51,7 @@
 class EvaCompiler
 {
 public:
-    EvaCompiler() {}
+    EvaCompiler() : disassembler(std::make_unique<EvaDisassembler>()) {}
 
     /**
      * Main compile API
@@ -194,7 +195,18 @@ public:
         }
     }
 
+    /**
+     * Disassemble all compilation units
+    */
+   void disassembleBytecode(){
+    disassembler->disassemble(co);
+   }
+
 private:
+    /**
+     * Disassembler
+    */
+   std::unique_ptr<EvaDisassembler> disassembler;
 
     /**
      * Returns current bytecode offset.

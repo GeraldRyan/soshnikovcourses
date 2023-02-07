@@ -135,6 +135,9 @@ public:
         ip = &co->code[0];
         sp = &stack[0];
 
+        // debug disassembly:
+        compiler->disassembleBytecode();
+
         // std::cout << ip;
         return eval();
     }
