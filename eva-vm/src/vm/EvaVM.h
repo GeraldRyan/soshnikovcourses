@@ -9,11 +9,13 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <memory>
 #include "../bytecode/OpCode.h"
 #include "../Logger.h"
 #include "../parser/EvaParser.h"
 #include "EvaValue.h"
 #include "../compiler/EvaCompiler.h"
+#include "Global.h"
 
 using syntax::EvaParser;
 
@@ -24,12 +26,12 @@ using syntax::EvaParser;
 
 /**
  * Reads a short word (2 bytes)
-*/
-#define READ_SHORT() (uint16_t)((ip +=2, (ip[-2] << 8) | ip[-1]))
+ */
+#define READ_SHORT() (uint16_t)((ip += 2, (ip[-2] << 8) | ip[-1]))
 
 /**
  * Converts bytecode index to a pointer
-*/
+ */
 #define TO_ADDRESS(index) (&co->code[index])
 
 /**
@@ -88,8 +90,12 @@ using syntax::EvaParser;
 class EvaVM
 {
 public:
-    EvaVM() : parser(std::make_unique<EvaParser>()),
-              compiler(std::make_unique<EvaCompiler>()) {}
+    EvaVM() : global(std::make_shared<Global>()),
+              parser(std::make_unique<EvaParser>()),
+              compiler(std::make_unique<EvaCompiler>(global))
+    {
+        setGlobalVariables();
+    }
 
     /** Pushes a value onto the stack*/
     void push(const EvaValue &value)
@@ -192,7 +198,7 @@ public:
             case OP_DIV:
                 BINARY_OP(/);
                 break;
-            
+
             case OP_COMPARE:
             {
                 auto op = READ_BYTE();
@@ -213,21 +219,24 @@ public:
                 break;
             }
 
-            // ---------------------
-            // Conditional jump:
+                // ---------------------
+                // Conditional jump:
 
-            case OP_JMP_IF_FALSE:{
+            case OP_JMP_IF_FALSE:
+            {
                 auto cond = AS_BOOLEAN(pop()); // TODO: TO_BOOLEAN (0 === false)
                 auto address = READ_SHORT();
 
-                if (!cond){
+                if (!cond)
+                {
                     ip = TO_ADDRESS(address);
                 }
 
                 break;
             }
 
-            case OP_JMP: {
+            case OP_JMP:
+            {
                 ip = TO_ADDRESS(READ_SHORT());
                 break;
             }
@@ -237,6 +246,23 @@ public:
             }
         }
     }
+
+    /**
+     * Set global variables
+     */
+    void setGlobalVariables()
+    {
+        // global->define('x');
+        // global->set('x', NUMBER(10));
+        global->addConst("x", 10);
+        global->addConst("y", 20);
+    };
+
+    /**
+     * Global object.
+     * Shared between VM and compiler. Compiler pre-installs some variables into global object.
+     */
+    std::shared_ptr<Global> global;
 
     /**
      * Parser

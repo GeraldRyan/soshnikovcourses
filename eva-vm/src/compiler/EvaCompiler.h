@@ -13,8 +13,7 @@
 #include "../bytecode/OpCode.h"
 #include "../disassembler/EvaDisassembler.h"
 #include "../Logger.h"
-
-
+#include "../vm/Global.h"
 
 /**
  * Allocates a new constant in the pool
@@ -51,7 +50,8 @@
 class EvaCompiler
 {
 public:
-    EvaCompiler() : disassembler(std::make_unique<EvaDisassembler>()) {}
+    EvaCompiler(std::shared_ptr<Global> global) : global(global),
+                                                  disassembler(std::make_unique<EvaDisassembler>()) {}
 
     /**
      * Main compile API
@@ -109,7 +109,13 @@ public:
             }
             else
             {
-                // variables ; TODO
+                // Variables
+                if (!global->exists(exp.string))
+                {
+                    DIE << "[EvaCompiler]: Reference error: " << exp.string;
+                }
+                emit(OP_GET_GLOBAL);
+                emit(global->getGlobalIndex(exp.string));
             }
             break;
         /**
@@ -154,8 +160,9 @@ public:
 
                 /**
                  * (if <test> <consequent> <alternate>)
-                */
-                else if (op == "if"){
+                 */
+                else if (op == "if")
+                {
                     // Emit <test>:
                     gen(exp.list[1]);
 
@@ -165,7 +172,7 @@ public:
                     // Note we use 2-byte addresses:
                     emit(0);
                     emit(0);
-                    auto elseJmpAddr = getOffset() -2;
+                    auto elseJmpAddr = getOffset() - 2;
 
                     // Emit <consequent>
                     gen(exp.list[2]);
@@ -174,14 +181,15 @@ public:
                     // Note we use 2-byte addresses:
                     emit(0);
                     emit(0);
-                    auto endAddr = getOffset() -2;
+                    auto endAddr = getOffset() - 2;
 
                     // Patch the else branch address.
                     auto elseBranchAddr = getOffset();
                     patchJumpAddress(elseJmpAddr, elseBranchAddr);
 
                     // Emit <alternate> if we have it
-                    if (exp.list.size() == 4){
+                    if (exp.list.size() == 4)
+                    {
                         gen(exp.list[3]);
                     }
 
@@ -197,21 +205,28 @@ public:
 
     /**
      * Disassemble all compilation units
-    */
-   void disassembleBytecode(){
-    disassembler->disassemble(co);
-   }
+     */
+    void disassembleBytecode()
+    {
+        disassembler->disassemble(co);
+    }
 
 private:
     /**
+     * Global object
+     */
+    std::shared_ptr<Global> global;
+
+
+    /**
      * Disassembler
-    */
-   std::unique_ptr<EvaDisassembler> disassembler;
+     */
+    std::unique_ptr<EvaDisassembler> disassembler;
 
     /**
      * Returns current bytecode offset.
-    */
-   size_t getOffset(){return co->code.size();}
+     */
+    size_t getOffset() { return co->code.size(); }
     /**
      * Allocates a numeric constant.
      */
@@ -246,17 +261,19 @@ private:
 
     /**
      * Writes byte at offset.
-    */
-   void writeByteAtOffset(size_t offset, uint8_t value){
-    co->code[offset] = value;
-   }
+     */
+    void writeByteAtOffset(size_t offset, uint8_t value)
+    {
+        co->code[offset] = value;
+    }
     /**
      * Patches jump address
-    */
-   void patchJumpAddress(size_t offset, uint16_t value){
-    writeByteAtOffset(offset, (value >> 8) & 0xff);
-    writeByteAtOffset(offset + 1, value & 0xff);
-   }
+     */
+    void patchJumpAddress(size_t offset, uint16_t value)
+    {
+        writeByteAtOffset(offset, (value >> 8) & 0xff);
+        writeByteAtOffset(offset + 1, value & 0xff);
+    }
 
     /**
      * Compiling code object.
