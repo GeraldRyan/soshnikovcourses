@@ -51,7 +51,7 @@ class EvaCompiler
 {
 public:
     EvaCompiler(std::shared_ptr<Global> global) : global(global),
-                                                  disassembler(std::make_unique<EvaDisassembler>()) {}
+                                                  disassembler(std::make_unique<EvaDisassembler>(global)) {}
 
     /**
      * Main compile API
