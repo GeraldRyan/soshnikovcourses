@@ -119,6 +119,14 @@ public:
         return *sp;
     }
 
+    /** Peeks an element from the stack*/
+    EvaValue peek(size_t offset = 0){
+        if (stack.size() == 0){
+            DIE << "peek(): empty stack.\n";
+        }
+        return *(sp - 1 - offset);
+    }
+
     /*
     Executes a program
     */
@@ -235,9 +243,24 @@ public:
                 break;
             }
 
+            // unconditional jump
             case OP_JMP:
             {
                 ip = TO_ADDRESS(READ_SHORT());
+                break;
+            }
+
+            // Global variable value
+            case OP_GET_GLOBAL: {
+                auto globalIndex = READ_BYTE();
+                push(global->get(globalIndex).value);
+                break;
+            }
+
+            case OP_SET_GLOBAL: {
+                auto globalIndex = READ_BYTE();
+                auto value = peek(0);
+                global->set(globalIndex, value);
                 break;
             }
 

@@ -197,6 +197,44 @@ public:
                     auto endBranchAddr = getOffset();
                     patchJumpAddress(endAddr, endBranchAddr);
                 }
+
+                // --------------------
+                // Variable declaration (var x (+ y 10))
+
+                else if (op == "var"){
+                    // 1. Global variable
+
+                    auto varName = exp.list[1].string;
+
+                    global->define(varName);
+
+                    // initializer
+                    gen(exp.list[2]);
+                    emit(OP_SET_GLOBAL);
+                    emit(global->getGlobalIndex(varName));
+
+                    // 2. Local vars: (TODO )
+                }
+                
+                // ---------
+                // Variable update (set x 100)
+                else if (op == "set"){
+                    // 1. global vars
+
+                    auto varName = exp.list[1].string;
+
+                    // initializer
+                    gen(exp.list[2]);
+                    auto globalIndex = global->getGlobalIndex(varName);
+                    if (globalIndex == -1){
+                        DIE << "Reference Error: " << varName << " is not defined.";
+                    }
+                    emit(OP_SET_GLOBAL);
+                    emit(globalIndex);
+
+                    // local vars todo
+                }
+
             }
 
             break;

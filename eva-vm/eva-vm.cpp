@@ -9,7 +9,7 @@ int main(int argc, char const *argv[]){
     EvaVM vm;
 
     auto result = vm.exec(R"(
-        x
+        (set x (+ x 10)) 
     )");
 
     log(result);
